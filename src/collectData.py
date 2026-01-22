@@ -5,72 +5,112 @@
 # power/current consumption of each joint and total robot
 # TCP position, orientation, velocity, angular velocity
 # Acceleration data for the endeffector
+import random
 import rtde_control
 import rtde_receive
-import spatialmath as sm
-from scipy.spatial.transform import Rotation as R
-import threading
 import numpy as np
-import matplotlib.pyplot as plt
 import time
+import spatialmath as sm
 import pandas as pd
-from datetime import datetime
-import tqdm
 import json
-import sys
-rtde_c = rtde_control.RTDEControlInterface("192.168.1.11")
-rtde_r = rtde_receive.RTDEReceiveInterface("192.168.1.11")
-
+from datetime import datetime
+import threading
 from column_def_csv import ColumnDefinitionCSVFile as c_def
 from column_def_csv import Robot_Attribute as rob_att
+from RobotiqHandE import RobotiqGripper
 
-from center_tool import center_tool
-
-NUM_TOTAL_INSERTIONS = 6000
-
-x_deviation = 0.0
-y_deviation = 0.0
-# 1.0 1.9 2.8 3.7
-movement_done = False
+folder_name = "trial1/"
+recording = False
+program_running = True
 insertion = 1
 data = []
 deltatime = 0.001 #in seconds
-
-# deviation_position = [grid_points[idx][0], grid_points[idx][1], 0.0]  # x, y, z deviation in meters
-deviation_position = [0.0, 2.2, 0.0] # in mm
-deviation_orientation = [0.0, 0.0, 0.0]     # rx, ry, rz deviation in degrees
-deviation_position = [x / 1000.0 for x in deviation_position]
-deviation_orientation = [x / 1000.0 for x in deviation_orientation]
 
 # -2, -1, 0, 1, 2
 # -3.5, -1.75, 0, 1.75, 3.5
 exceeded_force_flag = False
 calibrated_zero_position = np.zeros(6)
 
+def approx_force_to_for_value(force_n: float,
+                              force_min_n: float = 20.0,
+                              force_max_n: float = 130.0) -> int:
+    """
+    Rough mapping only. Real grip force depends on speed, mechanics, object compliance, etc.
+    Use experiments to calibrate if you need repeatability.
+    Hand-E spec indicates ~20–130 N range. :contentReference[oaicite:3]{index=3}
+    """
+    force_n = max(force_min_n, min(force_n, force_max_n))
+    scaled = (force_n - force_min_n) / (force_max_n - force_min_n)  # 0..1
+    return int(round(scaled * 255))
+
+
+def init_gripper(gripper: RobotiqGripper, ur_ip: str):
+    # Typical URCap socket endpoint for Robotiq is port 63352. :contentReference[oaicite:4]{index=4}
+    gripper.connect(hostname=ur_ip, port=63352, socket_timeout=2.0)
+
+    # Activate + (optional) auto-calibrate travel range
+    gripper.activate(auto_calibrate=True)
+
+    # Open once to a known state
+    gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
+
+
+def close_until_force_limit(gripper: RobotiqGripper,
+                            target_force_n: float,
+                            speed: int = 128):
+    """
+    Closes toward fully closed. The gripper will stop when it hits an object and applies
+    force up to the commanded limit (FOR). We treat this commanded limit as the "threshold".
+    """
+    for_value = approx_force_to_for_value(target_force_n)
+    closed_pos = gripper.get_closed_position()
+
+    final_pos, obj_status = gripper.move_and_wait_for_pos(
+        position=closed_pos,
+        speed=speed,
+        force=for_value,
+    )
+
+    if obj_status in (
+        RobotiqGripper.ObjectStatus.STOPPED_OUTER_OBJECT,
+        RobotiqGripper.ObjectStatus.STOPPED_INNER_OBJECT,
+    ):
+        print(f"Object detected. Stopped at pos={final_pos}, force_setting(FOR)={for_value}")
+        return True
+
+    if obj_status == RobotiqGripper.ObjectStatus.AT_DEST:
+        print(f"Reached target position (likely fully closed). pos={final_pos}")
+        return False
+
+    # Shouldn't usually happen if enums match firmware, but keep for safety:
+    print(f"Ended with status={obj_status}, pos={final_pos}")
+    return False
+
 
 def listen_robot_data():
-    while not movement_done:
-        temp_data = np.array([insertion]) # number of current insertion [0]
-        force = np.array(rtde_r.getActualTCPForce())
-        actual_pose = np.array(rtde_r.getActualTCPPose())
-        R_6x6 = np.zeros((6,6))
-        R_6x6[:3,:3] = np.array(sm.SE3.Ry(180,'deg') * sm.SE3.EulerVec(actual_pose[3:]))[:3,:3]
-        R_6x6[3:,3:] = np.array(sm.SE3.Ry(180,'deg') * sm.SE3.EulerVec(actual_pose[3:]))[:3,:3]
-        force = (R_6x6 @ force.T).T
-        temp_data = np.concatenate((temp_data, force)) # TCP Force [1:7]
-        temp_data = np.concatenate((temp_data, actual_pose)) # TCP Pose [7:13]
-        temp_data = np.concatenate((temp_data, rtde_r.getActualTCPSpeed())) # TCP Velocity [13:19]
-        temp_data = np.concatenate((temp_data, rtde_r.getActualQ())) # Joint Angles [19:25]
-        temp_data = np.concatenate((temp_data, rtde_r.getActualQd())) # Joint Velocity [25:31]
-        temp_data = np.concatenate((temp_data, rtde_r.getActualToolAccelerometer())) # Tool Accelerometer [31:34]
-        temp_data = np.concatenate((temp_data, [rtde_r.getActualRobotCurrent()])) # Current consumption of whole robot [34]
-        temp_data = np.concatenate((temp_data, [rtde_r.getActualRobotVoltage()])) # Voltage consumption of whole robot [35]
-        temp_data = np.concatenate((temp_data, rtde_r.getActualCurrent())) # Current consumption of each joint [36:42]
-        temp_data = np.concatenate((temp_data, rtde_r.getJointTemperatures())) # Temperature of each joint [42:48]
+    while program_running:
+        while recording:
+            temp_data = np.array([insertion]) # number of current insertion [0]
+            force = np.array(rtde_r.getActualTCPForce())
+            actual_pose = np.array(rtde_r.getActualTCPPose())
+            R_6x6 = np.zeros((6,6))
+            R_6x6[:3,:3] = np.array(sm.SE3.Ry(180,'deg') * sm.SE3.EulerVec(actual_pose[3:]))[:3,:3]
+            R_6x6[3:,3:] = np.array(sm.SE3.Ry(180,'deg') * sm.SE3.EulerVec(actual_pose[3:]))[:3,:3]
+            force = (R_6x6 @ force.T).T
+            temp_data = np.concatenate((temp_data, force)) # TCP Force [1:7]
+            temp_data = np.concatenate((temp_data, actual_pose)) # TCP Pose [7:13]
+            temp_data = np.concatenate((temp_data, rtde_r.getActualTCPSpeed())) # TCP Velocity [13:19]
+            temp_data = np.concatenate((temp_data, rtde_r.getActualQ())) # Joint Angles [19:25]
+            temp_data = np.concatenate((temp_data, rtde_r.getActualQd())) # Joint Velocity [25:31]
+            temp_data = np.concatenate((temp_data, rtde_r.getActualToolAccelerometer())) # Tool Accelerometer [31:34]
+            temp_data = np.concatenate((temp_data, [rtde_r.getActualRobotCurrent()])) # Current consumption of whole robot [34]
+            temp_data = np.concatenate((temp_data, [rtde_r.getActualRobotVoltage()])) # Voltage consumption of whole robot [35]
+            temp_data = np.concatenate((temp_data, rtde_r.getActualCurrent())) # Current consumption of each joint [36:42]
+            temp_data = np.concatenate((temp_data, rtde_r.getJointTemperatures())) # Temperature of each joint [42:48]
 
-        data.append(temp_data)
-        time.sleep(deltatime)
-        # print(actual_force)
+            data.append(temp_data)
+            time.sleep(deltatime)
+            # print(actual_force)
 
 def move_world_frame(desired_pose, vel = 0.2, acc = 0.3, asy = False):
     world_origin_tf = sm.SE3(np.append(calibrated_zero_position[:2], 0.05)) * sm.SE3.EulerVec(calibrated_zero_position[3:]) * sm.SE3.Ry(180,'deg')
@@ -80,7 +120,7 @@ def move_world_frame(desired_pose, vel = 0.2, acc = 0.3, asy = False):
     target = np.concatenate((togoto.t,togoto.eulervec()))
     return rtde_c.moveL(target, vel, acc, asynchronous = asy) # TODO: do asynch true to be able to stop it
 
-def save_data_to_csv(f_data, idx):
+def save_data_to_csv(f_data, idx, deviation, successful_insertion, obj, holeSize):
     column_names = (
         c_def.numInsertion +
         c_def.mapping_new[rob_att.force.name][0] +
@@ -101,9 +141,10 @@ def save_data_to_csv(f_data, idx):
     timestamp = datetime.now()
     timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
     # Prepare filenames
-    basename = f"wear_down_{idx}_{timestamp_str}"
-    csv_filename = basename + ".csv"
-    json_filename = basename + ".json"
+    # basename = f"wear_down_{idx}_{timestamp_str}"
+    basename = f"insertion_{idx}_{timestamp_str}"
+    csv_filename = folder_name + basename + ".csv"
+    json_filename = folder_name + basename + ".json"
 
     # 1) Save CSV (data only)
     df.to_csv(csv_filename, index=False)
@@ -113,58 +154,71 @@ def save_data_to_csv(f_data, idx):
     metadata = {
         "saved_at": timestamp.isoformat(),
         "deltatime": deltatime,
-        "deviation_position": deviation_position,
-        "deviation_orientation": deviation_orientation,
-        "num_total_insertions": NUM_TOTAL_INSERTIONS
+        "deviation": deviation,
+        "successful_insertion": successful_insertion,
+        "insertion_object": obj,
+        "hole_size": holeSize
     }
-
-    # 3) Dump metadata to JSON
     with open(json_filename, "w") as jf:
         json.dump(metadata, jf, indent=2)
     print("saved metadata:", json_filename)
 
 
 
-desired_pose = sm.SE3(deviation_position[0], deviation_position[1],-0.06 + deviation_position[2]) * sm.SE3.Rx(deviation_orientation[0],'deg') * sm.SE3.Ry(deviation_orientation[1],'deg') * sm.SE3.Rz(deviation_orientation[2],'deg') 
-zero_pose = sm.SE3(deviation_position[0], deviation_position[1], deviation_position[2]) * sm.SE3.Rx(deviation_orientation[0],'deg') * sm.SE3.Ry(deviation_orientation[1],'deg') * sm.SE3.Rz(deviation_orientation[2],'deg') 
+# desired_pose = sm.SE3(deviation_position[0], deviation_position[1],-0.06 + deviation_position[2]) * sm.SE3.Rx(deviation_orientation[0],'deg') * sm.SE3.Ry(deviation_orientation[1],'deg') * sm.SE3.Rz(deviation_orientation[2],'deg') 
+# zero_pose = sm.SE3(deviation_position[0], deviation_position[1], deviation_position[2]) * sm.SE3.Rx(deviation_orientation[0],'deg') * sm.SE3.Ry(deviation_orientation[1],'deg') * sm.SE3.Rz(deviation_orientation[2],'deg') 
 
-# move_world_frame(zero_pose)
-print("devi translation", deviation_position)
-print("devi orientation", deviation_orientation)
-print("calibrating...")
-center_tool(rtde_r, rtde_c)
-calibrated_zero_position = center_tool(rtde_r, rtde_c, velocity=0.007)
-print("moving to zero pose")
-move_world_frame(zero_pose)
-print("starting recording")
-
-# exit()
-
-thread1 = threading.Thread(target=listen_robot_data)
-thread1.start()
+# thread1 = threading.Thread(target=listen_robot_data)
+# thread1.start()
 # rtde_c.zeroFtSensor()
-filenum = 1
-for i in tqdm.tqdm(range(NUM_TOTAL_INSERTIONS), desc="Insertion"):
-    rtde_c.zeroFtSensor()
-    move_world_frame(desired_pose)
-    # while True:
-    #     if not rtde_c.getAsyncOperationProgressEx().isAsyncOperationRunning():
-    #         break
-    #     if exceeded_force_flag:
-    #         rtde_c.stopL()
-    #         print("force was exceeded")
-    #         break
-    move_world_frame(zero_pose)
-    insertion += 1
+bigRodAbovePose = np.array([-0.3724, -0.3274, 0.26, 3.079, -0.625, 0.0])
+bigHoleAbovePose = np.array([-0.52932, -0.30131, 0.26, 3.079, -0.625, 0.0])
 
-    if (i+1) % 200 == 0:
-        save_data_to_csv(data, filenum)
-        data = []
-        filenum += 1
+ur_ip = "192.168.1.11"
+rtde_c = rtde_control.RTDEControlInterface(ur_ip)
+rtde_r = rtde_receive.RTDEReceiveInterface(ur_ip)
+gripper = RobotiqGripper()
+thread1 = threading.Thread(target=listen_robot_data)
+
+rtde_c.moveL(bigRodAbovePose)
+init_gripper(gripper, ur_ip)
+thread1.start()
+
+for i in range(10):
+    rtde_c.zeroFtSensor()
+    rtde_c.moveL(bigRodAbovePose + np.array([0, 0, -0.06, 0, 0, 0]), 0.1, 0.5)
+    close_until_force_limit(gripper, target_force_n=50.0, speed=128)
+    
+    rtde_c.moveL(bigRodAbovePose, 0.1, 0.5)
+    rtde_c.moveL(bigHoleAbovePose, 0.4, 0.5)
+    # insertion
+    insertion = 1
+    axis_ranges = [(-0.0002, 0.0002), (-0.0002, 0.0002), (-0.0, 0.0)]  # (min,max) for x,y,z
+    deviation_position = [float(np.random.uniform(a, b)) for a, b in axis_ranges]
+    deviation_orientation = [0.0, 0.0, 0.0]
+    #concat this shit
+    devi = np.concatenate((deviation_position, deviation_orientation))
+
+    recording = True
+    rtde_c.moveL(bigHoleAbovePose + np.array([0, 0, -0.05, 0, 0, 0]) + devi, 0.05, 0.2)
+    insertion = 2
+    rtde_c.moveL(bigHoleAbovePose + devi, 0.05, 0.2)
+    recording = False
+
+    successful_insertion = bool(input("Was the insertion successful? (1/0): "))
+    save_data_to_csv(data, i+1, devi.tolist(), successful_insertion, "big_rod", "big_hole")
+    data = []
+
+    rtde_c.moveL(bigRodAbovePose, 0.4, 0.5)
+    rtde_c.moveL(bigRodAbovePose + np.array([0, 0, -0.06, 0, 0, 0]), 0.2, 0.5)
+    gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
+    rtde_c.moveL(bigRodAbovePose, 0.2, 0.5)
+
 
 # time.sleep(10)
 
-movement_done = True
+# movement_done = True
+program_running = False
 
 thread1.join()
 
