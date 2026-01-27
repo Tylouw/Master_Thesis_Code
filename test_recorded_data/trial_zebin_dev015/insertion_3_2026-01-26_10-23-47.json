@@ -1,0 +1,19 @@
+{
+  "saved_at": "2026-01-26T10:23:47.706780",
+  "deltatime": 0.002,
+  "deviation": [
+    -0.00011112746876525178,
+    -0.0002786587261971675,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "angle_radius": [
+    4.332922564555525,
+    0.0003
+  ],
+  "successful_insertion": true,
+  "insertion_object": "big_rod",
+  "hole_size": "big_hole_tight"
+}

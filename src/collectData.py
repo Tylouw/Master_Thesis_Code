@@ -19,17 +19,21 @@ from column_def_csv import ColumnDefinitionCSVFile as c_def
 from column_def_csv import Robot_Attribute as rob_att
 from RobotiqHandE import RobotiqGripper
 
-folder_name = "trial6/"
+folder_name = "devi01_test/"
 recording = False
 program_running = True
 insertion = 1
+num_insertions = 1
 data = []
 deltatime = 0.002 #in seconds
-min_max_deviation = 0.0008 #in meters
-angular_error = np.deg2rad(2.0) #in degrees
+min_max_deviation = 0.001 #in meters
+angular_error = np.deg2rad(0.0) #in degrees
 bigRodAbovePose = np.array([-0.3724, -0.3274, 0.06, 3.079, -0.625, 0.0])
-bigHoleAbovePose = np.array([-0.52932, -0.30131, 0.06, 3.079, -0.625, 0.0])
-bigHoleTightAbovePose = np.array([-0.53889, -0.32441, 0.06, 3.079, -0.625, 0.0])
+bigHole03AbovePose = np.array([-0.52932, -0.30131, 0.06, 3.079, -0.625, 0.0])
+bigHole02AbovePose = np.array([-0.53889, -0.32441, 0.06, 3.079, -0.625, 0.0])
+bigHole01AbovePose = np.array([-0.5484, -0.34798, 0.06, 3.079, -0.625, 0.0])
+
+# a failed
 
 ur_ip = "192.168.1.11"
 rtde_c = rtde_control.RTDEControlInterface(ur_ip)
@@ -189,7 +193,7 @@ rtde_c.moveL(bigRodAbovePose)
 init_gripper(gripper, ur_ip)
 thread1.start()
 
-for i in range(10):
+for i in range(num_insertions):
     rtde_c.zeroFtSensor()
     rtde_c.moveL(bigRodAbovePose + np.array([0, 0, -0.06, 0, 0, 0]), 0.1, 0.5)
     close_until_force_limit(gripper, target_force_n=50.0, speed=128)
@@ -206,8 +210,10 @@ for i in range(10):
         
     
     insertion = 1
-    angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
-    radius = np.random.uniform(0, min_max_deviation)  # Random radius
+    # angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
+    # radius = np.random.uniform(0, min_max_deviation)  # Random radius
+    angle = 0.0
+    radius = min_max_deviation
     
     # Convert polar to Cartesian coordinates
     deviation_x = radius * np.cos(angle)
@@ -220,15 +226,15 @@ for i in range(10):
     # insertion
     #concat this shit
 
-    rtde_c.moveL(bigHoleTightAbovePose + devi, 0.4, 0.5)
+    rtde_c.moveL(bigHole01AbovePose + devi, 0.4, 0.5)
     recording = True
-    rtde_c.moveL(bigHoleTightAbovePose + np.array([0, 0, -0.05, 0, 0, 0]) + devi, 0.05, 0.2)
+    rtde_c.moveL(bigHole01AbovePose + np.array([0, 0, -0.05, 0, 0, 0]) + devi, 0.05, 0.2)
     insertion = 2
-    rtde_c.moveL(bigHoleTightAbovePose + devi, 0.05, 0.2)
+    rtde_c.moveL(bigHole01AbovePose + devi, 0.05, 0.2)
     recording = False
 
     successful_insertion = bool(int(input("Was the insertion successful? (1/0): ")))
-    # save_data_to_csv(data, i+1, devi.tolist(), [angle, radius], successful_insertion, "big_rod", "big_hole_tight")
+    save_data_to_csv(data, i+1, devi.tolist(), [angle, radius], successful_insertion, "big_rod", "big_hole_tight")
     data = []
 
     rtde_c.moveL(bigRodAbovePose, 0.4, 0.5)
