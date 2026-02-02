@@ -1,0 +1,584 @@
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 790 samples under ForceDataNovo/Old_Fixture
+pos: 506.0 neg: 284.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:176: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(amp and device.type == "cuda"))
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:188: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=(amp and device.type == "cuda")):
+Epoch 001 | train loss 0.6577 acc 0.641 | val loss 0.6666 acc 0.614
+Epoch 002 | train loss 0.6529 acc 0.647 | val loss 0.6664 acc 0.614
+Epoch 003 | train loss 0.6495 acc 0.647 | val loss 0.6676 acc 0.614
+Epoch 004 | train loss 0.6507 acc 0.647 | val loss 0.6683 acc 0.614
+Epoch 005 | train loss 0.6364 acc 0.649 | val loss 0.6266 acc 0.614
+Epoch 006 | train loss 0.5833 acc 0.688 | val loss 0.4795 acc 0.759
+Epoch 007 | train loss 0.4645 acc 0.804 | val loss 0.4371 acc 0.791
+Epoch 008 | train loss 0.3985 acc 0.821 | val loss 0.4475 acc 0.785
+Epoch 009 | train loss 0.3935 acc 0.810 | val loss 0.4045 acc 0.791
+Epoch 010 | train loss 0.4131 acc 0.805 | val loss 0.4316 acc 0.778
+Epoch 011 | train loss 0.4006 acc 0.801 | val loss 0.4253 acc 0.797
+Epoch 012 | train loss 0.3756 acc 0.815 | val loss 0.4367 acc 0.753
+Epoch 013 | train loss 0.3375 acc 0.823 | val loss 0.3634 acc 0.823
+Epoch 014 | train loss 0.3194 acc 0.826 | val loss 0.3819 acc 0.848
+Epoch 015 | train loss 0.3021 acc 0.851 | val loss 0.4220 acc 0.816
+Epoch 016 | train loss 0.2790 acc 0.867 | val loss 0.3740 acc 0.829
+Epoch 017 | train loss 0.2580 acc 0.870 | val loss 0.3568 acc 0.829
+Epoch 018 | train loss 0.2498 acc 0.886 | val loss 0.3796 acc 0.829
+Epoch 019 | train loss 0.2350 acc 0.884 | val loss 0.5389 acc 0.829
+Epoch 020 | train loss 0.2263 acc 0.894 | val loss 0.4720 acc 0.829
+Epoch 021 | train loss 0.2418 acc 0.892 | val loss 0.4267 acc 0.848
+Epoch 022 | train loss 0.2523 acc 0.880 | val loss 0.3608 acc 0.848
+Epoch 023 | train loss 0.2075 acc 0.892 | val loss 0.5441 acc 0.810
+Epoch 024 | train loss 0.2323 acc 0.884 | val loss 0.3733 acc 0.867
+Epoch 025 | train loss 0.2475 acc 0.881 | val loss 0.3876 acc 0.854
+Best val acc: 0.8670886075949367
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 1485 samples under ForceDataNovo/Old_Fixture
+pos: 803.0 neg: 682.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:176: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(amp and device.type == "cuda"))
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:188: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=(amp and device.type == "cuda")):
+Epoch 001 | train loss 0.6992 acc 0.551 | val loss 0.6695 acc 0.606
+Epoch 002 | train loss 0.6339 acc 0.641 | val loss 0.6118 acc 0.670
+Epoch 003 | train loss 0.5620 acc 0.706 | val loss 0.5328 acc 0.747
+Epoch 004 | train loss 0.4339 acc 0.805 | val loss 0.4052 acc 0.842
+Epoch 005 | train loss 0.3902 acc 0.836 | val loss 0.3184 acc 0.882
+Epoch 006 | train loss 0.3923 acc 0.830 | val loss 0.3041 acc 0.869
+Epoch 007 | train loss 0.2976 acc 0.874 | val loss 0.3339 acc 0.848
+Epoch 008 | train loss 0.2766 acc 0.869 | val loss 0.3179 acc 0.869
+Epoch 009 | train loss 0.2681 acc 0.884 | val loss 0.3335 acc 0.872
+Epoch 010 | train loss 0.2552 acc 0.877 | val loss 0.3807 acc 0.848
+Epoch 011 | train loss 0.2433 acc 0.895 | val loss 0.3032 acc 0.882
+Epoch 012 | train loss 0.2554 acc 0.888 | val loss 0.2688 acc 0.879
+Epoch 013 | train loss 0.2494 acc 0.885 | val loss 0.3319 acc 0.869
+Epoch 014 | train loss 0.2670 acc 0.884 | val loss 0.2476 acc 0.896
+Epoch 015 | train loss 0.2316 acc 0.897 | val loss 0.2471 acc 0.899
+Epoch 016 | train loss 0.2222 acc 0.900 | val loss 0.2513 acc 0.899
+Epoch 017 | train loss 0.2258 acc 0.904 | val loss 0.2685 acc 0.862
+Epoch 018 | train loss 0.2256 acc 0.887 | val loss 0.2573 acc 0.886
+Epoch 019 | train loss 0.2155 acc 0.899 | val loss 0.2653 acc 0.879
+Epoch 020 | train loss 0.2155 acc 0.896 | val loss 0.2469 acc 0.902
+Epoch 021 | train loss 0.1967 acc 0.905 | val loss 0.2601 acc 0.879
+Epoch 022 | train loss 0.1807 acc 0.918 | val loss 0.2494 acc 0.882
+Epoch 023 | train loss 0.1757 acc 0.921 | val loss 0.2771 acc 0.916
+Epoch 024 | train loss 0.1659 acc 0.934 | val loss 0.2835 acc 0.899
+Epoch 025 | train loss 0.1711 acc 0.930 | val loss 0.2610 acc 0.892
+Best val acc: 0.9158249158249159
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+Traceback (most recent call last):
+  File "/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py", line 104, in <module>
+    class TrainCfg:
+  File "/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py", line 120, in TrainCfg
+    timestamp = datetime.now()
+AttributeError: module 'datetime' has no attribute 'now'
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 1485 samples under ForceDataNovo/Old_Fixture
+pos: 803.0 neg: 682.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:206: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(amp and device.type == "cuda"))
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:218: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=(amp and device.type == "cuda")):
+Confusion matrix (thr=0.5): TP=166 FP=115 TN=14 FN=2
+Epoch 001 | train loss 0.6992 acc 0.551 | val loss 0.6695 acc 0.606
+Confusion matrix (thr=0.5): TP=165 FP=95 TN=34 FN=3
+Epoch 002 | train loss 0.6339 acc 0.641 | val loss 0.6118 acc 0.670
+Confusion matrix (thr=0.5): TP=113 FP=20 TN=109 FN=55
+Epoch 003 | train loss 0.5620 acc 0.706 | val loss 0.5328 acc 0.747
+Confusion matrix (thr=0.5): TP=137 FP=16 TN=113 FN=31
+Epoch 004 | train loss 0.4339 acc 0.805 | val loss 0.4052 acc 0.842
+Confusion matrix (thr=0.5): TP=147 FP=14 TN=115 FN=21
+Epoch 005 | train loss 0.3902 acc 0.836 | val loss 0.3184 acc 0.882
+Confusion matrix (thr=0.5): TP=145 FP=16 TN=113 FN=23
+Epoch 006 | train loss 0.3923 acc 0.830 | val loss 0.3041 acc 0.869
+Confusion matrix (thr=0.5): TP=161 FP=38 TN=91 FN=7
+Epoch 007 | train loss 0.2976 acc 0.874 | val loss 0.3339 acc 0.848
+Confusion matrix (thr=0.5): TP=164 FP=35 TN=94 FN=4
+Epoch 008 | train loss 0.2766 acc 0.869 | val loss 0.3179 acc 0.869
+Confusion matrix (thr=0.5): TP=164 FP=34 TN=95 FN=4
+Epoch 009 | train loss 0.2681 acc 0.884 | val loss 0.3335 acc 0.872
+Confusion matrix (thr=0.5): TP=161 FP=38 TN=91 FN=7
+Epoch 010 | train loss 0.2552 acc 0.877 | val loss 0.3807 acc 0.848
+Confusion matrix (thr=0.5): TP=139 FP=6 TN=123 FN=29
+Epoch 011 | train loss 0.2433 acc 0.895 | val loss 0.3032 acc 0.882
+Confusion matrix (thr=0.5): TP=157 FP=25 TN=104 FN=11
+Epoch 012 | train loss 0.2554 acc 0.888 | val loss 0.2688 acc 0.879
+Confusion matrix (thr=0.5): TP=148 FP=19 TN=110 FN=20
+Epoch 013 | train loss 0.2494 acc 0.885 | val loss 0.3319 acc 0.869
+Confusion matrix (thr=0.5): TP=161 FP=24 TN=105 FN=7
+Epoch 014 | train loss 0.2670 acc 0.884 | val loss 0.2476 acc 0.896
+Confusion matrix (thr=0.5): TP=159 FP=21 TN=108 FN=9
+Epoch 015 | train loss 0.2316 acc 0.897 | val loss 0.2471 acc 0.899
+Confusion matrix (thr=0.5): TP=164 FP=26 TN=103 FN=4
+Epoch 016 | train loss 0.2222 acc 0.900 | val loss 0.2513 acc 0.899
+Confusion matrix (thr=0.5): TP=134 FP=7 TN=122 FN=34
+Epoch 017 | train loss 0.2258 acc 0.904 | val loss 0.2685 acc 0.862
+Confusion matrix (thr=0.5): TP=153 FP=19 TN=110 FN=15
+Epoch 018 | train loss 0.2256 acc 0.887 | val loss 0.2573 acc 0.886
+Confusion matrix (thr=0.5): TP=155 FP=23 TN=106 FN=13
+Epoch 019 | train loss 0.2155 acc 0.899 | val loss 0.2653 acc 0.879
+Confusion matrix (thr=0.5): TP=161 FP=22 TN=107 FN=7
+Epoch 020 | train loss 0.2155 acc 0.896 | val loss 0.2469 acc 0.902
+Confusion matrix (thr=0.5): TP=155 FP=23 TN=106 FN=13
+Epoch 021 | train loss 0.1967 acc 0.905 | val loss 0.2601 acc 0.879
+Confusion matrix (thr=0.5): TP=155 FP=22 TN=107 FN=13
+Epoch 022 | train loss 0.1807 acc 0.918 | val loss 0.2494 acc 0.882
+Confusion matrix (thr=0.5): TP=156 FP=13 TN=116 FN=12
+Epoch 023 | train loss 0.1757 acc 0.921 | val loss 0.2771 acc 0.916
+Confusion matrix (thr=0.5): TP=165 FP=27 TN=102 FN=3
+Epoch 024 | train loss 0.1659 acc 0.934 | val loss 0.2835 acc 0.899
+Confusion matrix (thr=0.5): TP=153 FP=17 TN=112 FN=15
+Epoch 025 | train loss 0.1711 acc 0.930 | val loss 0.2610 acc 0.892
+Best val acc: 0.9158249158249159
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 1485 samples under ForceDataNovo/Old_Fixture
+train size: 1142 val size: 343
+val groups: ['2025_09_08', '2025_09_09']
+pos: 803.0 neg: 682.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:206: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(amp and device.type == "cuda"))
+/home/jwobber/Documents/Master_Thesis_Code/src/train_patchtst.py:218: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=(amp and device.type == "cuda")):
+Confusion matrix (thr=0.5): TP=166 FP=115 TN=14 FN=2
+Epoch 001 | train loss 0.6992 acc 0.551 | val loss 0.6695 acc 0.606
+Confusion matrix (thr=0.5): TP=165 FP=95 TN=34 FN=3
+Epoch 002 | train loss 0.6339 acc 0.641 | val loss 0.6118 acc 0.670
+Confusion matrix (thr=0.5): TP=113 FP=20 TN=109 FN=55
+Epoch 003 | train loss 0.5620 acc 0.706 | val loss 0.5328 acc 0.747
+Confusion matrix (thr=0.5): TP=137 FP=16 TN=113 FN=31
+Epoch 004 | train loss 0.4339 acc 0.805 | val loss 0.4052 acc 0.842
+Confusion matrix (thr=0.5): TP=147 FP=14 TN=115 FN=21
+Epoch 005 | train loss 0.3902 acc 0.836 | val loss 0.3184 acc 0.882
+Confusion matrix (thr=0.5): TP=145 FP=16 TN=113 FN=23
+Epoch 006 | train loss 0.3923 acc 0.830 | val loss 0.3041 acc 0.869
+Confusion matrix (thr=0.5): TP=161 FP=38 TN=91 FN=7
+Epoch 007 | train loss 0.2976 acc 0.874 | val loss 0.3339 acc 0.848
+Confusion matrix (thr=0.5): TP=164 FP=35 TN=94 FN=4
+Epoch 008 | train loss 0.2766 acc 0.869 | val loss 0.3179 acc 0.869
+Confusion matrix (thr=0.5): TP=164 FP=34 TN=95 FN=4
+Epoch 009 | train loss 0.2681 acc 0.884 | val loss 0.3335 acc 0.872
+Confusion matrix (thr=0.5): TP=161 FP=38 TN=91 FN=7
+Epoch 010 | train loss 0.2552 acc 0.877 | val loss 0.3807 acc 0.848
+Confusion matrix (thr=0.5): TP=139 FP=6 TN=123 FN=29
+Epoch 011 | train loss 0.2433 acc 0.895 | val loss 0.3032 acc 0.882
+Confusion matrix (thr=0.5): TP=157 FP=25 TN=104 FN=11
+Epoch 012 | train loss 0.2554 acc 0.888 | val loss 0.2688 acc 0.879
+Confusion matrix (thr=0.5): TP=148 FP=19 TN=110 FN=20
+Epoch 013 | train loss 0.2494 acc 0.885 | val loss 0.3319 acc 0.869
+Confusion matrix (thr=0.5): TP=161 FP=24 TN=105 FN=7
+Epoch 014 | train loss 0.2670 acc 0.884 | val loss 0.2476 acc 0.896
+Confusion matrix (thr=0.5): TP=159 FP=21 TN=108 FN=9
+Epoch 015 | train loss 0.2316 acc 0.897 | val loss 0.2471 acc 0.899
+Confusion matrix (thr=0.5): TP=164 FP=26 TN=103 FN=4
+Epoch 016 | train loss 0.2222 acc 0.900 | val loss 0.2513 acc 0.899
+Confusion matrix (thr=0.5): TP=134 FP=7 TN=122 FN=34
+Epoch 017 | train loss 0.2258 acc 0.904 | val loss 0.2685 acc 0.862
+Confusion matrix (thr=0.5): TP=153 FP=19 TN=110 FN=15
+Epoch 018 | train loss 0.2256 acc 0.887 | val loss 0.2573 acc 0.886
+Confusion matrix (thr=0.5): TP=155 FP=23 TN=106 FN=13
+Epoch 019 | train loss 0.2155 acc 0.899 | val loss 0.2653 acc 0.879
+Confusion matrix (thr=0.5): TP=161 FP=22 TN=107 FN=7
+Epoch 020 | train loss 0.2155 acc 0.896 | val loss 0.2469 acc 0.902
+Confusion matrix (thr=0.5): TP=155 FP=23 TN=106 FN=13
+Epoch 021 | train loss 0.1967 acc 0.905 | val loss 0.2601 acc 0.879
+Confusion matrix (thr=0.5): TP=155 FP=22 TN=107 FN=13
+Epoch 022 | train loss 0.1807 acc 0.918 | val loss 0.2494 acc 0.882
+Confusion matrix (thr=0.5): TP=156 FP=13 TN=116 FN=12
+Epoch 023 | train loss 0.1757 acc 0.921 | val loss 0.2771 acc 0.916
+Confusion matrix (thr=0.5): TP=165 FP=27 TN=102 FN=3
+Epoch 024 | train loss 0.1659 acc 0.934 | val loss 0.2835 acc 0.899
+Confusion matrix (thr=0.5): TP=153 FP=17 TN=112 FN=15
+Epoch 025 | train loss 0.1711 acc 0.930 | val loss 0.2610 acc 0.892
+Best val acc: 0.9158249158249159
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 1485 samples under ForceDataNovo/Old_Fixture
+unique groups: 9
+top groups: [('train_CASE2025', 695), ('2025_09_08', 177), ('2025_09_09', 166), ('2025_09_03', 134), ('2025_08_29', 95), ('2025_09_01', 66), ('2025_09_04', 57), ('2025_09_05', 55), ('2025_09_02', 40)]
+train size: 1142 val size: 343
+val groups: ['2025_09_08', '2025_09_09']
+overall pos: 803.0 neg: 682.0
+train   pos: 596.0 neg: 546.0
+val     pos: 207.0 neg: 136.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+Confusion matrix (thr=0.5): TP=203 FP=128 TN=8 FN=4
+Val metrics: Precision=0.613 Recall=0.981 F1=0.755 Specificity=0.059
+Epoch 001 | train loss 0.6896 acc 0.560 | val loss 0.6759 acc 0.615
+Confusion matrix (thr=0.5): TP=196 FP=120 TN=16 FN=11
+Val metrics: Precision=0.620 Recall=0.947 F1=0.750 Specificity=0.118
+Epoch 002 | train loss 0.6062 acc 0.670 | val loss 0.6689 acc 0.618
+Confusion matrix (thr=0.5): TP=191 FP=106 TN=30 FN=16
+Val metrics: Precision=0.643 Recall=0.923 F1=0.758 Specificity=0.221
+Epoch 003 | train loss 0.5412 acc 0.722 | val loss 0.6150 acc 0.644
+Confusion matrix (thr=0.5): TP=151 FP=14 TN=122 FN=56
+Val metrics: Precision=0.915 Recall=0.729 F1=0.812 Specificity=0.897
+Epoch 004 | train loss 0.4083 acc 0.823 | val loss 0.4443 acc 0.796
+Confusion matrix (thr=0.5): TP=154 FP=9 TN=127 FN=53
+Val metrics: Precision=0.945 Recall=0.744 F1=0.832 Specificity=0.934
+Epoch 005 | train loss 0.3467 acc 0.847 | val loss 0.3850 acc 0.819
+Confusion matrix (thr=0.5): TP=184 FP=41 TN=95 FN=23
+Val metrics: Precision=0.818 Recall=0.889 F1=0.852 Specificity=0.699
+Epoch 006 | train loss 0.2999 acc 0.866 | val loss 0.3818 acc 0.813
+Confusion matrix (thr=0.5): TP=163 FP=25 TN=111 FN=44
+Val metrics: Precision=0.867 Recall=0.787 F1=0.825 Specificity=0.816
+Epoch 007 | train loss 0.2661 acc 0.885 | val loss 0.3988 acc 0.799
+Confusion matrix (thr=0.5): TP=176 FP=29 TN=107 FN=31
+Val metrics: Precision=0.859 Recall=0.850 F1=0.854 Specificity=0.787
+Epoch 008 | train loss 0.2636 acc 0.871 | val loss 0.3339 acc 0.825
+Confusion matrix (thr=0.5): TP=183 FP=37 TN=99 FN=24
+Val metrics: Precision=0.832 Recall=0.884 F1=0.857 Specificity=0.728
+Epoch 009 | train loss 0.2266 acc 0.905 | val loss 0.3372 acc 0.822
+Confusion matrix (thr=0.5): TP=165 FP=20 TN=116 FN=42
+Val metrics: Precision=0.892 Recall=0.797 F1=0.842 Specificity=0.853
+Epoch 010 | train loss 0.2277 acc 0.905 | val loss 0.3304 acc 0.819
+Confusion matrix (thr=0.5): TP=186 FP=34 TN=102 FN=21
+Val metrics: Precision=0.845 Recall=0.899 F1=0.871 Specificity=0.750
+Epoch 011 | train loss 0.2362 acc 0.899 | val loss 0.3336 acc 0.840
+Confusion matrix (thr=0.5): TP=178 FP=30 TN=106 FN=29
+Val metrics: Precision=0.856 Recall=0.860 F1=0.858 Specificity=0.779
+Epoch 012 | train loss 0.2252 acc 0.897 | val loss 0.3189 acc 0.828
+Confusion matrix (thr=0.5): TP=193 FP=46 TN=90 FN=14
+Val metrics: Precision=0.808 Recall=0.932 F1=0.865 Specificity=0.662
+Epoch 013 | train loss 0.2131 acc 0.906 | val loss 0.3425 acc 0.825
+Confusion matrix (thr=0.5): TP=195 FP=43 TN=93 FN=12
+Val metrics: Precision=0.819 Recall=0.942 F1=0.876 Specificity=0.684
+Epoch 014 | train loss 0.2051 acc 0.912 | val loss 0.3095 acc 0.840
+Confusion matrix (thr=0.5): TP=145 FP=9 TN=127 FN=62
+Val metrics: Precision=0.942 Recall=0.700 F1=0.803 Specificity=0.934
+Epoch 015 | train loss 0.2087 acc 0.909 | val loss 0.4374 acc 0.793
+Confusion matrix (thr=0.5): TP=188 FP=35 TN=101 FN=19
+Val metrics: Precision=0.843 Recall=0.908 F1=0.874 Specificity=0.743
+Epoch 016 | train loss 0.2268 acc 0.900 | val loss 0.3289 acc 0.843
+Confusion matrix (thr=0.5): TP=180 FP=29 TN=107 FN=27
+Val metrics: Precision=0.861 Recall=0.870 F1=0.865 Specificity=0.787
+Epoch 017 | train loss 0.2161 acc 0.906 | val loss 0.3270 acc 0.837
+Confusion matrix (thr=0.5): TP=187 FP=39 TN=97 FN=20
+Val metrics: Precision=0.827 Recall=0.903 F1=0.864 Specificity=0.713
+Epoch 018 | train loss 0.2226 acc 0.896 | val loss 0.3114 acc 0.828
+Confusion matrix (thr=0.5): TP=192 FP=41 TN=95 FN=15
+Val metrics: Precision=0.824 Recall=0.928 F1=0.873 Specificity=0.699
+Epoch 019 | train loss 0.2253 acc 0.905 | val loss 0.3376 acc 0.837
+Confusion matrix (thr=0.5): TP=177 FP=30 TN=106 FN=30
+Val metrics: Precision=0.855 Recall=0.855 F1=0.855 Specificity=0.779
+Epoch 020 | train loss 0.2001 acc 0.909 | val loss 0.3316 acc 0.825
+Confusion matrix (thr=0.5): TP=191 FP=37 TN=99 FN=16
+Val metrics: Precision=0.838 Recall=0.923 F1=0.878 Specificity=0.728
+Epoch 021 | train loss 0.1751 acc 0.924 | val loss 0.3130 acc 0.845
+Confusion matrix (thr=0.5): TP=188 FP=34 TN=102 FN=19
+Val metrics: Precision=0.847 Recall=0.908 F1=0.876 Specificity=0.750
+Epoch 022 | train loss 0.1744 acc 0.929 | val loss 0.3077 acc 0.845
+Confusion matrix (thr=0.5): TP=189 FP=36 TN=100 FN=18
+Val metrics: Precision=0.840 Recall=0.913 F1=0.875 Specificity=0.735
+Epoch 023 | train loss 0.1735 acc 0.925 | val loss 0.3190 acc 0.843
+Confusion matrix (thr=0.5): TP=170 FP=20 TN=116 FN=37
+Val metrics: Precision=0.895 Recall=0.821 F1=0.856 Specificity=0.853
+Epoch 024 | train loss 0.1409 acc 0.929 | val loss 0.3753 acc 0.834
+Confusion matrix (thr=0.5): TP=185 FP=36 TN=100 FN=22
+Val metrics: Precision=0.837 Recall=0.894 F1=0.864 Specificity=0.735
+Epoch 025 | train loss 0.1685 acc 0.916 | val loss 0.3755 acc 0.831
+Best val acc: 0.8454810495626822
+Saved best checkpoint as: checkpoints/patchtst_force_best_2026-02-02_15-30-06.pt
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 1485 samples under ForceDataNovo/Old_Fixture
+unique groups: 9
+top groups: [('train_CASE2025', 695), ('2025_09_08', 177), ('2025_09_09', 166), ('2025_09_03', 134), ('2025_08_29', 95), ('2025_09_01', 66), ('2025_09_04', 57), ('2025_09_05', 55), ('2025_09_02', 40)]
+train size: 1142 val size: 343
+val groups: ['2025_09_08', '2025_09_09']
+overall pos: 803.0 neg: 682.0
+train   pos: 596.0 neg: 546.0
+val     pos: 207.0 neg: 136.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+Confusion matrix (thr=0.3): TP=207 FP=136 TN=0 FN=0
+Val metrics: Precision=0.603 Recall=1.000 F1=0.753 Specificity=0.000
+Epoch 001 | train loss 0.6896 acc 0.560 | val loss 0.6759 acc 0.603
+Confusion matrix (thr=0.3): TP=201 FP=125 TN=11 FN=6
+Val metrics: Precision=0.617 Recall=0.971 F1=0.754 Specificity=0.081
+Epoch 002 | train loss 0.6062 acc 0.670 | val loss 0.6689 acc 0.618
+Confusion matrix (thr=0.3): TP=200 FP=118 TN=18 FN=7
+Val metrics: Precision=0.629 Recall=0.966 F1=0.762 Specificity=0.132
+Epoch 003 | train loss 0.5412 acc 0.722 | val loss 0.6150 acc 0.636
+Confusion matrix (thr=0.3): TP=164 FP=33 TN=103 FN=43
+Val metrics: Precision=0.832 Recall=0.792 F1=0.812 Specificity=0.757
+Epoch 004 | train loss 0.4083 acc 0.823 | val loss 0.4443 acc 0.778
+Confusion matrix (thr=0.3): TP=175 FP=38 TN=98 FN=32
+Val metrics: Precision=0.822 Recall=0.845 F1=0.833 Specificity=0.721
+Epoch 005 | train loss 0.3467 acc 0.847 | val loss 0.3850 acc 0.796
+Confusion matrix (thr=0.3): TP=194 FP=54 TN=82 FN=13
+Val metrics: Precision=0.782 Recall=0.937 F1=0.853 Specificity=0.603
+Epoch 006 | train loss 0.2999 acc 0.866 | val loss 0.3818 acc 0.805
+Confusion matrix (thr=0.3): TP=178 FP=33 TN=103 FN=29
+Val metrics: Precision=0.844 Recall=0.860 F1=0.852 Specificity=0.757
+Epoch 007 | train loss 0.2661 acc 0.885 | val loss 0.3988 acc 0.819
+Confusion matrix (thr=0.3): TP=192 FP=37 TN=99 FN=15
+Val metrics: Precision=0.838 Recall=0.928 F1=0.881 Specificity=0.728
+Epoch 008 | train loss 0.2636 acc 0.871 | val loss 0.3339 acc 0.848
+Confusion matrix (thr=0.3): TP=198 FP=55 TN=81 FN=9
+Val metrics: Precision=0.783 Recall=0.957 F1=0.861 Specificity=0.596
+Epoch 009 | train loss 0.2266 acc 0.905 | val loss 0.3372 acc 0.813
+Confusion matrix (thr=0.3): TP=189 FP=35 TN=101 FN=18
+Val metrics: Precision=0.844 Recall=0.913 F1=0.877 Specificity=0.743
+Epoch 010 | train loss 0.2277 acc 0.905 | val loss 0.3304 acc 0.845
+Confusion matrix (thr=0.3): TP=192 FP=39 TN=97 FN=15
+Val metrics: Precision=0.831 Recall=0.928 F1=0.877 Specificity=0.713
+Epoch 011 | train loss 0.2362 acc 0.899 | val loss 0.3336 acc 0.843
+Confusion matrix (thr=0.3): TP=190 FP=35 TN=101 FN=17
+Val metrics: Precision=0.844 Recall=0.918 F1=0.880 Specificity=0.743
+Epoch 012 | train loss 0.2252 acc 0.897 | val loss 0.3189 acc 0.848
+Confusion matrix (thr=0.3): TP=197 FP=53 TN=83 FN=10
+Val metrics: Precision=0.788 Recall=0.952 F1=0.862 Specificity=0.610
+Epoch 013 | train loss 0.2131 acc 0.906 | val loss 0.3425 acc 0.816
+Confusion matrix (thr=0.3): TP=201 FP=57 TN=79 FN=6
+Val metrics: Precision=0.779 Recall=0.971 F1=0.865 Specificity=0.581
+Epoch 014 | train loss 0.2051 acc 0.912 | val loss 0.3095 acc 0.816
+Confusion matrix (thr=0.3): TP=157 FP=17 TN=119 FN=50
+Val metrics: Precision=0.902 Recall=0.758 F1=0.824 Specificity=0.875
+Epoch 015 | train loss 0.2087 acc 0.909 | val loss 0.4374 acc 0.805
+Confusion matrix (thr=0.3): TP=192 FP=38 TN=98 FN=15
+Val metrics: Precision=0.835 Recall=0.928 F1=0.879 Specificity=0.721
+Epoch 016 | train loss 0.2268 acc 0.900 | val loss 0.3289 acc 0.845
+Confusion matrix (thr=0.3): TP=189 FP=37 TN=99 FN=18
+Val metrics: Precision=0.836 Recall=0.913 F1=0.873 Specificity=0.728
+Epoch 017 | train loss 0.2161 acc 0.906 | val loss 0.3270 acc 0.840
+Confusion matrix (thr=0.3): TP=201 FP=63 TN=73 FN=6
+Val metrics: Precision=0.761 Recall=0.971 F1=0.854 Specificity=0.537
+Epoch 018 | train loss 0.2226 acc 0.896 | val loss 0.3114 acc 0.799
+Confusion matrix (thr=0.3): TP=201 FP=65 TN=71 FN=6
+Val metrics: Precision=0.756 Recall=0.971 F1=0.850 Specificity=0.522
+Epoch 019 | train loss 0.2253 acc 0.905 | val loss 0.3376 acc 0.793
+Confusion matrix (thr=0.3): TP=190 FP=33 TN=103 FN=17
+Val metrics: Precision=0.852 Recall=0.918 F1=0.884 Specificity=0.757
+Epoch 020 | train loss 0.2001 acc 0.909 | val loss 0.3316 acc 0.854
+Confusion matrix (thr=0.3): TP=195 FP=47 TN=89 FN=12
+Val metrics: Precision=0.806 Recall=0.942 F1=0.869 Specificity=0.654
+Epoch 021 | train loss 0.1751 acc 0.924 | val loss 0.3130 acc 0.828
+Confusion matrix (thr=0.3): TP=194 FP=40 TN=96 FN=13
+Val metrics: Precision=0.829 Recall=0.937 F1=0.880 Specificity=0.706
+Epoch 022 | train loss 0.1744 acc 0.929 | val loss 0.3077 acc 0.845
+Confusion matrix (thr=0.3): TP=193 FP=40 TN=96 FN=14
+Val metrics: Precision=0.828 Recall=0.932 F1=0.877 Specificity=0.706
+Epoch 023 | train loss 0.1735 acc 0.925 | val loss 0.3190 acc 0.843
+Confusion matrix (thr=0.3): TP=194 FP=44 TN=92 FN=13
+Val metrics: Precision=0.815 Recall=0.937 F1=0.872 Specificity=0.676
+Epoch 024 | train loss 0.1409 acc 0.929 | val loss 0.3753 acc 0.834
+Confusion matrix (thr=0.3): TP=197 FP=46 TN=90 FN=10
+Val metrics: Precision=0.811 Recall=0.952 F1=0.876 Specificity=0.662
+Epoch 025 | train loss 0.1685 acc 0.916 | val loss 0.3755 acc 0.837
+Best val acc: 0.8542274052478134
+Saved best checkpoint as: checkpoints/patchtst_force_best_2026-02-02_15-48-40.pt
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 1485 samples under ForceDataNovo/Old_Fixture
+unique groups: 9
+top groups: [('train_CASE2025', 695), ('2025_09_08', 177), ('2025_09_09', 166), ('2025_09_03', 134), ('2025_08_29', 95), ('2025_09_01', 66), ('2025_09_04', 57), ('2025_09_05', 55), ('2025_09_02', 40)]
+train size: 1142 val size: 343
+val groups: ['2025_09_08', '2025_09_09']
+overall pos: 803.0 neg: 682.0
+train   pos: 596.0 neg: 546.0
+val     pos: 207.0 neg: 136.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+Confusion matrix (thr=0.7): TP=28 FP=1 TN=135 FN=179
+Val metrics: Precision=0.966 Recall=0.135 F1=0.237 Specificity=0.993
+Epoch 001 | train loss 0.6896 acc 0.560 | val loss 0.6759 acc 0.475
+Confusion matrix (thr=0.7): TP=0 FP=0 TN=136 FN=207
+Val metrics: Precision=0.000 Recall=0.000 F1=0.000 Specificity=1.000
+Epoch 002 | train loss 0.6062 acc 0.670 | val loss 0.6689 acc 0.397
+Confusion matrix (thr=0.7): TP=169 FP=59 TN=77 FN=38
+Val metrics: Precision=0.741 Recall=0.816 F1=0.777 Specificity=0.566
+Epoch 003 | train loss 0.5412 acc 0.722 | val loss 0.6150 acc 0.717
+Confusion matrix (thr=0.7): TP=139 FP=7 TN=129 FN=68
+Val metrics: Precision=0.952 Recall=0.671 F1=0.788 Specificity=0.949
+Epoch 004 | train loss 0.4083 acc 0.823 | val loss 0.4443 acc 0.781
+Confusion matrix (thr=0.7): TP=131 FP=0 TN=136 FN=76
+Val metrics: Precision=1.000 Recall=0.633 F1=0.775 Specificity=1.000
+Epoch 005 | train loss 0.3467 acc 0.847 | val loss 0.3850 acc 0.778
+Confusion matrix (thr=0.7): TP=163 FP=20 TN=116 FN=44
+Val metrics: Precision=0.891 Recall=0.787 F1=0.836 Specificity=0.853
+Epoch 006 | train loss 0.2999 acc 0.866 | val loss 0.3818 acc 0.813
+Confusion matrix (thr=0.7): TP=143 FP=13 TN=123 FN=64
+Val metrics: Precision=0.917 Recall=0.691 F1=0.788 Specificity=0.904
+Epoch 007 | train loss 0.2661 acc 0.885 | val loss 0.3988 acc 0.776
+Confusion matrix (thr=0.7): TP=133 FP=1 TN=135 FN=74
+Val metrics: Precision=0.993 Recall=0.643 F1=0.780 Specificity=0.993
+Epoch 008 | train loss 0.2636 acc 0.871 | val loss 0.3339 acc 0.781
+Confusion matrix (thr=0.7): TP=135 FP=2 TN=134 FN=72
+Val metrics: Precision=0.985 Recall=0.652 F1=0.785 Specificity=0.985
+Epoch 009 | train loss 0.2266 acc 0.905 | val loss 0.3372 acc 0.784
+Confusion matrix (thr=0.7): TP=135 FP=0 TN=136 FN=72
+Val metrics: Precision=1.000 Recall=0.652 F1=0.789 Specificity=1.000
+Epoch 010 | train loss 0.2277 acc 0.905 | val loss 0.3304 acc 0.790
+Confusion matrix (thr=0.7): TP=146 FP=2 TN=134 FN=61
+Val metrics: Precision=0.986 Recall=0.705 F1=0.823 Specificity=0.985
+Epoch 011 | train loss 0.2362 acc 0.899 | val loss 0.3336 acc 0.816
+Confusion matrix (thr=0.7): TP=148 FP=7 TN=129 FN=59
+Val metrics: Precision=0.955 Recall=0.715 F1=0.818 Specificity=0.949
+Epoch 012 | train loss 0.2252 acc 0.897 | val loss 0.3189 acc 0.808
+Confusion matrix (thr=0.7): TP=153 FP=15 TN=121 FN=54
+Val metrics: Precision=0.911 Recall=0.739 F1=0.816 Specificity=0.890
+Epoch 013 | train loss 0.2131 acc 0.906 | val loss 0.3425 acc 0.799
+Confusion matrix (thr=0.7): TP=187 FP=33 TN=103 FN=20
+Val metrics: Precision=0.850 Recall=0.903 F1=0.876 Specificity=0.757
+Epoch 014 | train loss 0.2051 acc 0.912 | val loss 0.3095 acc 0.845
+Confusion matrix (thr=0.7): TP=129 FP=0 TN=136 FN=78
+Val metrics: Precision=1.000 Recall=0.623 F1=0.768 Specificity=1.000
+Epoch 015 | train loss 0.2087 acc 0.909 | val loss 0.4374 acc 0.773
+Confusion matrix (thr=0.7): TP=174 FP=22 TN=114 FN=33
+Val metrics: Precision=0.888 Recall=0.841 F1=0.864 Specificity=0.838
+Epoch 016 | train loss 0.2268 acc 0.900 | val loss 0.3289 acc 0.840
+Confusion matrix (thr=0.7): TP=163 FP=23 TN=113 FN=44
+Val metrics: Precision=0.876 Recall=0.787 F1=0.830 Specificity=0.831
+Epoch 017 | train loss 0.2161 acc 0.906 | val loss 0.3270 acc 0.805
+Confusion matrix (thr=0.7): TP=147 FP=1 TN=135 FN=60
+Val metrics: Precision=0.993 Recall=0.710 F1=0.828 Specificity=0.993
+Epoch 018 | train loss 0.2226 acc 0.896 | val loss 0.3114 acc 0.822
+Confusion matrix (thr=0.7): TP=158 FP=15 TN=121 FN=49
+Val metrics: Precision=0.913 Recall=0.763 F1=0.832 Specificity=0.890
+Epoch 019 | train loss 0.2253 acc 0.905 | val loss 0.3376 acc 0.813
+Confusion matrix (thr=0.7): TP=131 FP=0 TN=136 FN=76
+Val metrics: Precision=1.000 Recall=0.633 F1=0.775 Specificity=1.000
+Epoch 020 | train loss 0.2001 acc 0.909 | val loss 0.3316 acc 0.778
+Confusion matrix (thr=0.7): TP=166 FP=15 TN=121 FN=41
+Val metrics: Precision=0.917 Recall=0.802 F1=0.856 Specificity=0.890
+Epoch 021 | train loss 0.1751 acc 0.924 | val loss 0.3130 acc 0.837
+Confusion matrix (thr=0.7): TP=167 FP=13 TN=123 FN=40
+Val metrics: Precision=0.928 Recall=0.807 F1=0.863 Specificity=0.904
+Epoch 022 | train loss 0.1744 acc 0.929 | val loss 0.3077 acc 0.845
+Confusion matrix (thr=0.7): TP=172 FP=17 TN=119 FN=35
+Val metrics: Precision=0.910 Recall=0.831 F1=0.869 Specificity=0.875
+Epoch 023 | train loss 0.1735 acc 0.925 | val loss 0.3190 acc 0.848
+Confusion matrix (thr=0.7): TP=159 FP=9 TN=127 FN=48
+Val metrics: Precision=0.946 Recall=0.768 F1=0.848 Specificity=0.934
+Epoch 024 | train loss 0.1409 acc 0.929 | val loss 0.3753 acc 0.834
+Confusion matrix (thr=0.7): TP=163 FP=15 TN=121 FN=44
+Val metrics: Precision=0.916 Recall=0.787 F1=0.847 Specificity=0.890
+Epoch 025 | train loss 0.1685 acc 0.916 | val loss 0.3755 acc 0.828
+Best val acc: 0.8483965014577259
+Saved best checkpoint as: checkpoints/patchtst_force_best_2026-02-02_15-51-09.pt
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/train_patchtst.py
+device: cuda
+Found 1485 samples under ForceDataNovo/Old_Fixture
+unique groups: 9
+top groups: [('train_CASE2025', 695), ('2025_09_08', 177), ('2025_09_09', 166), ('2025_09_03', 134), ('2025_08_29', 95), ('2025_09_01', 66), ('2025_09_04', 57), ('2025_09_05', 55), ('2025_09_02', 40)]
+train size: 1142 val size: 343
+val groups: ['2025_09_08', '2025_09_09']
+overall pos: 803.0 neg: 682.0
+train   pos: 596.0 neg: 546.0
+val     pos: 207.0 neg: 136.0
+/home/jwobber/Documents/Master_Thesis_Code/src/patchtst.py:126: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+Best threshold by balanced acc: 0.70
+Confusion matrix (thr=0.70): TP=28 FP=1 TN=135 FN=179
+Val metrics: Acc=0.475 BalAcc=0.564 Precision=0.966 Recall=0.135 F1=0.237 Specificity=0.993
+Epoch 001 | train loss 0.6896 acc 0.560 | val loss 0.6759 acc 0.475
+Best threshold by balanced acc: 0.65
+Confusion matrix (thr=0.65): TP=151 FP=70 TN=66 FN=56
+Val metrics: Acc=0.633 BalAcc=0.607 Precision=0.683 Recall=0.729 F1=0.706 Specificity=0.485
+Epoch 002 | train loss 0.6062 acc 0.670 | val loss 0.6689 acc 0.633
+Best threshold by balanced acc: 0.80
+Confusion matrix (thr=0.80): TP=134 FP=18 TN=118 FN=73
+Val metrics: Acc=0.735 BalAcc=0.757 Precision=0.882 Recall=0.647 F1=0.747 Specificity=0.868
+Epoch 003 | train loss 0.5412 acc 0.722 | val loss 0.6150 acc 0.735
+Best threshold by balanced acc: 0.75
+Confusion matrix (thr=0.75): TP=136 FP=1 TN=135 FN=71
+Val metrics: Acc=0.790 BalAcc=0.825 Precision=0.993 Recall=0.657 F1=0.791 Specificity=0.993
+Epoch 004 | train loss 0.4083 acc 0.823 | val loss 0.4443 acc 0.790
+Best threshold by balanced acc: 0.50
+Confusion matrix (thr=0.50): TP=154 FP=9 TN=127 FN=53
+Val metrics: Acc=0.819 BalAcc=0.839 Precision=0.945 Recall=0.744 F1=0.832 Specificity=0.934
+Epoch 005 | train loss 0.3467 acc 0.847 | val loss 0.3850 acc 0.819
+Best threshold by balanced acc: 0.80
+Confusion matrix (thr=0.80): TP=146 FP=6 TN=130 FN=61
+Val metrics: Acc=0.805 BalAcc=0.831 Precision=0.961 Recall=0.705 F1=0.813 Specificity=0.956
+Epoch 006 | train loss 0.2999 acc 0.866 | val loss 0.3818 acc 0.805
+Best threshold by balanced acc: 0.25
+Confusion matrix (thr=0.25): TP=185 FP=36 TN=100 FN=22
+Val metrics: Acc=0.831 BalAcc=0.815 Precision=0.837 Recall=0.894 F1=0.864 Specificity=0.735
+Epoch 007 | train loss 0.2661 acc 0.885 | val loss 0.3988 acc 0.831
+Best threshold by balanced acc: 0.35
+Confusion matrix (thr=0.35): TP=189 FP=34 TN=102 FN=18
+Val metrics: Acc=0.848 BalAcc=0.832 Precision=0.848 Recall=0.913 F1=0.879 Specificity=0.750
+Epoch 008 | train loss 0.2636 acc 0.871 | val loss 0.3339 acc 0.848
+Best threshold by balanced acc: 0.70
+Confusion matrix (thr=0.70): TP=135 FP=2 TN=134 FN=72
+Val metrics: Acc=0.784 BalAcc=0.819 Precision=0.985 Recall=0.652 F1=0.785 Specificity=0.985
+Epoch 009 | train loss 0.2266 acc 0.905 | val loss 0.3372 acc 0.784
+Best threshold by balanced acc: 0.60
+Confusion matrix (thr=0.60): TP=149 FP=3 TN=133 FN=58
+Val metrics: Acc=0.822 BalAcc=0.849 Precision=0.980 Recall=0.720 F1=0.830 Specificity=0.978
+Epoch 010 | train loss 0.2277 acc 0.905 | val loss 0.3304 acc 0.822
+Best threshold by balanced acc: 0.70
+Confusion matrix (thr=0.70): TP=146 FP=2 TN=134 FN=61
+Val metrics: Acc=0.816 BalAcc=0.845 Precision=0.986 Recall=0.705 F1=0.823 Specificity=0.985
+Epoch 011 | train loss 0.2362 acc 0.899 | val loss 0.3336 acc 0.816
+Best threshold by balanced acc: 0.75
+Confusion matrix (thr=0.75): TP=144 FP=1 TN=135 FN=63
+Val metrics: Acc=0.813 BalAcc=0.844 Precision=0.993 Recall=0.696 F1=0.818 Specificity=0.993
+Epoch 012 | train loss 0.2252 acc 0.897 | val loss 0.3189 acc 0.813
+Best threshold by balanced acc: 0.65
+Confusion matrix (thr=0.65): TP=178 FP=31 TN=105 FN=29
+Val metrics: Acc=0.825 BalAcc=0.816 Precision=0.852 Recall=0.860 F1=0.856 Specificity=0.772
+Epoch 013 | train loss 0.2131 acc 0.906 | val loss 0.3425 acc 0.825
+Best threshold by balanced acc: 0.80
+Confusion matrix (thr=0.80): TP=150 FP=2 TN=134 FN=57
+Val metrics: Acc=0.828 BalAcc=0.855 Precision=0.987 Recall=0.725 F1=0.836 Specificity=0.985
+Epoch 014 | train loss 0.2051 acc 0.912 | val loss 0.3095 acc 0.828
+Best threshold by balanced acc: 0.10
+Confusion matrix (thr=0.10): TP=188 FP=32 TN=104 FN=19
+Val metrics: Acc=0.851 BalAcc=0.836 Precision=0.855 Recall=0.908 F1=0.881 Specificity=0.765
+Epoch 015 | train loss 0.2087 acc 0.909 | val loss 0.4374 acc 0.851
+Best threshold by balanced acc: 0.80
+Confusion matrix (thr=0.80): TP=149 FP=3 TN=133 FN=58
+Val metrics: Acc=0.822 BalAcc=0.849 Precision=0.980 Recall=0.720 F1=0.830 Specificity=0.978
+Epoch 016 | train loss 0.2268 acc 0.900 | val loss 0.3289 acc 0.822
+Best threshold by balanced acc: 0.45
+Confusion matrix (thr=0.45): TP=185 FP=30 TN=106 FN=22
+Val metrics: Acc=0.848 BalAcc=0.837 Precision=0.860 Recall=0.894 F1=0.877 Specificity=0.779
+Epoch 017 | train loss 0.2161 acc 0.906 | val loss 0.3270 acc 0.848
+Best threshold by balanced acc: 0.65
+Confusion matrix (thr=0.65): TP=152 FP=2 TN=134 FN=55
+Val metrics: Acc=0.834 BalAcc=0.860 Precision=0.987 Recall=0.734 F1=0.842 Specificity=0.985
+Epoch 018 | train loss 0.2226 acc 0.896 | val loss 0.3114 acc 0.834
+Best threshold by balanced acc: 0.70
+Confusion matrix (thr=0.70): TP=158 FP=15 TN=121 FN=49
+Val metrics: Acc=0.813 BalAcc=0.826 Precision=0.913 Recall=0.763 F1=0.832 Specificity=0.890
+Epoch 019 | train loss 0.2253 acc 0.905 | val loss 0.3376 acc 0.813
+Best threshold by balanced acc: 0.20
+Confusion matrix (thr=0.20): TP=195 FP=36 TN=100 FN=12
+Val metrics: Acc=0.860 BalAcc=0.839 Precision=0.844 Recall=0.942 F1=0.890 Specificity=0.735
+Epoch 020 | train loss 0.2001 acc 0.909 | val loss 0.3316 acc 0.860
+Best threshold by balanced acc: 0.75
+Confusion matrix (thr=0.75): TP=162 FP=8 TN=128 FN=45
+Val metrics: Acc=0.845 BalAcc=0.862 Precision=0.953 Recall=0.783 F1=0.859 Specificity=0.941
+Epoch 021 | train loss 0.1751 acc 0.924 | val loss 0.3130 acc 0.845
+Best threshold by balanced acc: 0.70
+Confusion matrix (thr=0.70): TP=167 FP=13 TN=123 FN=40
+Val metrics: Acc=0.845 BalAcc=0.856 Precision=0.928 Recall=0.807 F1=0.863 Specificity=0.904
+Epoch 022 | train loss 0.1744 acc 0.929 | val loss 0.3077 acc 0.845
+Best threshold by balanced acc: 0.80
+Confusion matrix (thr=0.80): TP=164 FP=6 TN=130 FN=43
+Val metrics: Acc=0.857 BalAcc=0.874 Precision=0.965 Recall=0.792 F1=0.870 Specificity=0.956
+Epoch 023 | train loss 0.1735 acc 0.925 | val loss 0.3190 acc 0.857
+Best threshold by balanced acc: 0.60
+Confusion matrix (thr=0.60): TP=166 FP=11 TN=125 FN=41
+Val metrics: Acc=0.848 BalAcc=0.861 Precision=0.938 Recall=0.802 F1=0.865 Specificity=0.919
+Epoch 024 | train loss 0.1409 acc 0.929 | val loss 0.3753 acc 0.848
+Best threshold by balanced acc: 0.80
+Confusion matrix (thr=0.80): TP=154 FP=5 TN=131 FN=53
+Val metrics: Acc=0.831 BalAcc=0.854 Precision=0.969 Recall=0.744 F1=0.842 Specificity=0.963
+Epoch 025 | train loss 0.1685 acc 0.916 | val loss 0.3755 acc 0.831
+Best val acc: 0.8600583090379009
+Saved best checkpoint as: checkpoints/patchtst_force_best_2026-02-02_16-01-11.pt

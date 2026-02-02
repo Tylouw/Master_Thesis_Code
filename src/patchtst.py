@@ -76,6 +76,7 @@ class Patchify(nn.Module):
         # Unfold along length dimension: [B, L, C] -> [B, N, P, C]
         # torch.Tensor.unfold for dim=1
         patches = x.unfold(dimension=1, size=P, step=S)  # [B, N, P, C]
+        patches = patches.permute(0, 1, 3, 2).contiguous()
         return patches
 
 
