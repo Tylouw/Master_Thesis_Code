@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import asdict
 from typing import Literal, Optional, Tuple
 
 import torch
@@ -22,10 +23,10 @@ class PatchTSTConfig:
     pad_end: bool = True                   # pad sequence end to fit an integer number of patches
 
     # Model
-    d_model: int = 128
-    n_heads: int = 8
+    d_model: int = 128 #embedding size bzw token dimension (128)
+    n_heads: int = 8 #(8)
     n_layers: int = 4
-    d_ff: int = 256
+    d_ff: int = 256 # (256)
     dropout: float = 0.1
     activation: Literal["gelu", "relu"] = "gelu"
 
@@ -128,6 +129,53 @@ class TransformerEncoder(nn.Module):
     def forward(self, x: torch.Tensor, src_key_padding_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         # x: [B, N, D]
         return self.encoder(x, src_key_padding_mask=src_key_padding_mask)
+
+def patchtst_base(num_classes: int = 1) -> PatchTSTConfig:
+    return PatchTSTConfig(
+        num_classes=num_classes,
+        patch_len=25,
+        stride=25,
+        d_model=128,
+        n_heads=8,
+        n_layers=4,
+        d_ff=256,
+        dropout=0.1,
+        channel_independent=True,
+        pooling="mean",
+        fuse="mean",
+        # keep any other fields you already have
+    )
+
+def patchtst_small(num_classes: int = 1) -> PatchTSTConfig:
+    return PatchTSTConfig(
+        num_classes=num_classes,
+        patch_len=25,
+        stride=25,
+        d_model=64,
+        n_heads=4,
+        n_layers=2,
+        d_ff=128,
+        dropout=0.1,
+        channel_independent=True,
+        pooling="mean",
+        fuse="mean",
+    )
+
+MODEL_PRESETS = {
+    "base": patchtst_base,
+    "small": patchtst_small,
+}
+
+def get_model_config(preset: str, num_classes: int = 1) -> PatchTSTConfig:
+    if preset not in MODEL_PRESETS:
+        raise ValueError(f"Unknown preset '{preset}'. Available: {list(MODEL_PRESETS.keys())}")
+    return MODEL_PRESETS[preset](num_classes=num_classes)
+
+def config_to_dict(cfg: PatchTSTConfig) -> dict:
+    return asdict(cfg)
+
+def config_from_dict(d: dict) -> PatchTSTConfig:
+    return PatchTSTConfig(**d)
 
 
 class PatchTSTClassifier(nn.Module):

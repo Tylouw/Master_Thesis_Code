@@ -10,13 +10,15 @@ from typing import List, Tuple, Set
 from collections import Counter
 
 import numpy as np
+import copy
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+import time
 
 # Adjust import if your model file/module name differs
-from patchtst import PatchTSTClassifier, PatchTSTConfig
+from patchtst import PatchTSTClassifier, get_model_config, config_to_dict
 
 
 # -------------------------
@@ -102,27 +104,7 @@ def _default_ckpt_name() -> str:
     return f"patchtst_force_best_{ts}.pt"
 
 
-@dataclass
-class TrainCfg:
-    data_root: str = "ForceDataNovo/Old_Fixture"
-    seq_len: int = 1000
 
-    batch_size: int = 64
-    num_workers: int = 4
-    lr: float = 1e-3
-    weight_decay: float = 1e-2
-    epochs: int = 25
-    amp: bool = True
-    grad_clip: float = 1.0
-    seed: int = 42
-
-    # Session split
-    # Example: {"2025_09_08", "2025_09_09"}
-    val_groups: Set[str] = field(default_factory=lambda: {"2025_09_08", "2025_09_09"})
-
-    # Output
-    ckpt_dir: str = "checkpoints"
-    ckpt_name: str = field(default_factory=_default_ckpt_name)
 
 
 def set_seed(seed: int):
@@ -166,7 +148,7 @@ def metrics_from_cm(tp: int, fp: int, tn: int, fn: int):
 
 
 @torch.no_grad()
-def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tuple[float, float]:
+def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tuple[float, float, dict]:
     model.eval()
     criterion = nn.BCEWithLogitsLoss()
 
@@ -222,6 +204,26 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tupl
 
     tp, fp, tn, fn, acc, bal_acc, precision, recall, f1, specificity = best_stats
 
+    best_stats = {
+        "selection_metric": "balanced_accuracy",
+        "best_threshold": float(best_thr),
+
+        # Confusion matrix at best threshold
+        "tp": int(tp),
+        "fp": int(fp),
+        "tn": int(tn),
+        "fn": int(fn),
+
+        # Metrics at best threshold
+        "acc": float(acc),
+        "bal_acc": float(bal_acc),
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1": float(f1),
+        "specificity": float(specificity),
+    }
+
+
     print(f"Best threshold by balanced acc: {best_thr:.2f}")
     print(f"Confusion matrix (thr={best_thr:.2f}): TP={tp} FP={fp} TN={tn} FN={fn}")
     print(
@@ -229,7 +231,7 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tupl
         f"Precision={precision:.3f} Recall={recall:.3f} F1={f1:.3f} Specificity={specificity:.3f}"
     )
 
-    return total_loss / max(total, 1), acc
+    return total_loss / max(total, 1), acc, best_stats
 
 
 
@@ -277,6 +279,29 @@ def train_one_epoch(
 
     return total_loss / max(total, 1), correct / max(total, 1)
 
+@dataclass
+class TrainCfg:
+    model_preset: str = "small"
+
+    data_root: str = "ForceDataNovo/Old_Fixture"
+    seq_len: int = 1000
+
+    batch_size: int = 64
+    num_workers: int = 4
+    lr: float = 1e-3
+    weight_decay: float = 1e-2
+    epochs: int = 25
+    amp: bool = True
+    grad_clip: float = 1.0
+    seed: int = 42
+
+    # Session split
+    # Example: {"2025_09_08", "2025_09_09"}
+    val_groups: Set[str] = field(default_factory=lambda: {"2025_09_08", "2025_09_09"})
+
+    # Output
+    ckpt_dir: str = "checkpoints"
+    ckpt_name: str = field(default_factory=_default_ckpt_name)
 
 def main():
     cfg = TrainCfg()
@@ -328,19 +353,10 @@ def main():
     )
 
     # Model
-    model_cfg = PatchTSTConfig(
-        num_classes=1,            # single logit for BCE
-        patch_len=25,
-        stride=25,
-        d_model=128,
-        n_heads=8,
-        n_layers=4,
-        d_ff=256,
-        dropout=0.1,
-        channel_independent=True,
-        pooling="mean",
-        fuse="mean",
-    )
+    model_cfg = get_model_config(cfg.model_preset, num_classes=1)
+
+    print("MODEL CFG:", model_cfg)
+
     model = PatchTSTClassifier(model_cfg).to(device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
@@ -348,35 +364,61 @@ def main():
     best_val_acc = -1.0
     os.makedirs(cfg.ckpt_dir, exist_ok=True)
 
+    train_start = time.time()
+    best_epoch_time_start = time.time()
+
+    best_val_acc = -1.0
+    best_epoch = None
+    best_val_loss = None
+    best_stats = None
+    best_state_dict = None
+
     for epoch in range(1, cfg.epochs + 1):
+        best_epoch_time_start = time.time()
+        print()
         tr_loss, tr_acc = train_one_epoch(
             model, train_loader, optimizer, device,
             amp=cfg.amp, grad_clip=cfg.grad_clip
         )
-        va_loss, va_acc = evaluate(model, val_loader, device)
+        va_loss, va_acc, va_best_stats = evaluate(model, val_loader, device)
+        epoch_time = time.time() - best_epoch_time_start
 
         print(
             f"Epoch {epoch:03d} | "
             f"train loss {tr_loss:.4f} acc {tr_acc:.3f} | "
-            f"val loss {va_loss:.4f} acc {va_acc:.3f}"
+            f"val loss {va_loss:.4f} acc {va_acc:.3f} | "
+            f"time {epoch_time:.2f}s"
         )
 
         if va_acc > best_val_acc:
-            best_val_acc = va_acc
-            ckpt_path = Path(cfg.ckpt_dir) / cfg.ckpt_name
-            torch.save(
-                {
-                    "model_state": model.state_dict(),
-                    "model_cfg": model_cfg,
-                    "epoch": epoch,
-                    "val_acc": va_acc,
-                    "val_groups": sorted(cfg.val_groups),
-                },
-                ckpt_path,
-            )
+            best_val_acc = float(va_acc)
+            best_val_loss = float(va_loss)
+            best_epoch = int(epoch)
+            best_stats = va_best_stats              # dict of python scalars
+            best_time_to_best_s = epoch_time
 
-    print("Best val acc:", best_val_acc)
-    print("Saved best checkpoint as:", str(Path(cfg.ckpt_dir) / cfg.ckpt_name))
+        best_state_dict = copy.deepcopy(model.state_dict())
+
+    total_train_time_s = float(time.time() - train_start)
+    ckpt = {
+        "model_state": best_state_dict,
+        "model_cfg": config_to_dict(model_cfg),  # recommended (avoids torch.load issues)
+        "best_epoch": best_epoch,
+        "best_val_acc": best_val_acc,            # name it according to your criterion
+        "best_val_loss": best_val_loss,
+        "best_stats": best_stats,
+        "val_groups": sorted(cfg.val_groups),
+
+        # durations
+        "time_to_best_s": best_time_to_best_s,
+        "total_train_time_s": total_train_time_s,
+        "epochs_ran": int(cfg.epochs),
+    }
+    ckpt_path = Path(cfg.ckpt_dir) / cfg.ckpt_name
+    
+    torch.save(ckpt, ckpt_path)
+    print("Saved checkpoint:", ckpt_path)
+    print("time_to_best_s:", best_time_to_best_s, "total_train_time_s:", total_train_time_s)
 
 
 if __name__ == "__main__":
