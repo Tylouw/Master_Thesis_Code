@@ -18,6 +18,12 @@ import threading
 from column_def_csv import ColumnDefinitionCSVFile as c_def
 from column_def_csv import Robot_Attribute as rob_att
 from RobotiqHandE import RobotiqGripper
+import socket
+
+ARDUINO_IP = "192.168.4.1"
+PORT = 5000
+
+# --------------  CONFIGURATION  ----------------
 
 folder_name = "devi01_test/"
 recording = False
@@ -26,12 +32,15 @@ insertion = 1
 num_insertions = 1
 data = []
 deltatime = 0.002 #in seconds
-min_max_deviation = 0.001 #in meters
+min_max_deviation = 0.0 #in meters, less devi: 0.0001, much devi: 0.001
 angular_error = np.deg2rad(0.0) #in degrees
 bigRodAbovePose = np.array([-0.3724, -0.3274, 0.06, 3.079, -0.625, 0.0])
+bigRodGraspPose = np.array([-0.3724, -0.3274, 0.0, 3.079, -0.625, 0.0])
 bigHole03AbovePose = np.array([-0.52932, -0.30131, 0.06, 3.079, -0.625, 0.0])
 bigHole02AbovePose = np.array([-0.53889, -0.32441, 0.06, 3.079, -0.625, 0.0])
 bigHole01AbovePose = np.array([-0.5484, -0.34798, 0.06, 3.079, -0.625, 0.0])
+
+# -----------------------------------------------
 
 # a failed
 
@@ -127,6 +136,39 @@ def listen_robot_data():
             time.sleep(deltatime)
             # print(actual_force)
 
+def receive_loadcell_arduino():
+    while True:
+        try:
+            print(f"Connecting to {ARDUINO_IP}:{PORT} ...")
+            s = socket.create_connection((ARDUINO_IP, PORT), timeout=10.0)  # connect timeout only
+            s.settimeout(None)  # blocking reads (no read timeout)
+            s.sendall(b"START\n")
+
+            print("Connected. Receiving values...")
+
+            buf = b""
+            while True:
+                chunk = s.recv(4096)
+                if not chunk:
+                    raise ConnectionError("socket closed")
+                buf += chunk
+
+                while b"\n" in buf:
+                    line, buf = buf.split(b"\n", 1)
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        raw = int(line.decode("ascii", errors="ignore"))
+                        print(raw)
+                    except ValueError:
+                        # e.g. HELLO
+                        pass
+
+        except (OSError, ConnectionError) as e:
+            print(f"Disconnected ({e}). Reconnecting in 1s...")
+            time.sleep(1)
+
 def move_world_frame(desired_pose, vel = 0.2, acc = 0.3, asy = False):
     world_origin_tf = sm.SE3(np.append(calibrated_zero_position[:2], 0.05)) * sm.SE3.EulerVec(calibrated_zero_position[3:]) * sm.SE3.Ry(180,'deg')
     # world_origin_tf = sm.SE3(0.31675,-0.32044,0.05) * sm.SE3.EulerVec([1.20284,-2.90212,0.0]) * sm.SE3.Ry(180,'deg')
@@ -188,14 +230,21 @@ def save_data_to_csv(f_data, idx, deviation, angle_radius, successful_insertion,
 # thread1.start()
 # rtde_c.zeroFtSensor()
 thread1 = threading.Thread(target=listen_robot_data)
+thread2 = threading.Thread(target=receive_loadcell_arduino)
 
 rtde_c.moveL(bigRodAbovePose)
 init_gripper(gripper, ur_ip)
 thread1.start()
+thread2.start()
+
+selection_vector = [1, 1, 1, 1, 1, 1]
+wrench_down = [0, 0, -10, 0, 0, 0]
+force_type = 2
+limits = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
 
 for i in range(num_insertions):
     rtde_c.zeroFtSensor()
-    rtde_c.moveL(bigRodAbovePose + np.array([0, 0, -0.06, 0, 0, 0]), 0.1, 0.5)
+    rtde_c.moveL(bigRodGraspPose, 0.1, 0.5)
     close_until_force_limit(gripper, target_force_n=50.0, speed=128)
     rtde_c.moveL(bigRodAbovePose, 0.1, 0.5)
     # close_until_force_limit(gripper, target_force_n=20.0, speed=128)
@@ -225,17 +274,36 @@ for i in range(num_insertions):
     # break
     # insertion
     #concat this shit
+    insertionPoseUP = bigHole01AbovePose + devi
+    insertionPoseDown = insertionPoseUP + np.array([0, 0, -0.05, 0, 0, 0])
 
-    rtde_c.moveL(bigHole01AbovePose + devi, 0.4, 0.5)
+    rtde_c.moveL(insertionPoseUP, 0.4, 0.5)
     recording = True
-    rtde_c.moveL(bigHole01AbovePose + np.array([0, 0, -0.05, 0, 0, 0]) + devi, 0.05, 0.2)
-    insertion = 2
-    rtde_c.moveL(bigHole01AbovePose + devi, 0.05, 0.2)
+
+    rtde_c.forceMode([0,0,0,0,0,0], selection_vector, wrench_down, force_type, limits)
+    rtde_c.moveL(insertionPoseDown, 0.1, 0.2, asynchronous=True)
+    ts = time.time()
+
+    while True:
+        if time.time() - ts > 2.0:
+            rtde_c.stopL(5.0)
+            print("2 second time out")
+            print("Fail, the distance is:", np.linalg.norm(current_pose - insertionPoseDown))
+            timeout = True
+            break
+        current_pose = rtde_r.getActualTCPPose()
+        if np.linalg.norm(current_pose - insertionPoseDown) <= 0.001:
+            rtde_c.stopL(5.0)
+            print("Success, the distance is:", np.linalg.norm(current_pose - insertionPoseDown))
+            break
+    time.sleep(0.002)
     recording = False
+    rtde_c.forceModeStop()
 
     successful_insertion = bool(int(input("Was the insertion successful? (1/0): ")))
-    save_data_to_csv(data, i+1, devi.tolist(), [angle, radius], successful_insertion, "big_rod", "big_hole_tight")
+    # save_data_to_csv(data, i+1, devi.tolist(), [angle, radius], successful_insertion, "big_rod", "big_hole_tight")
     data = []
+    rtde_c.moveL(insertionPoseUP, 0.05, 0.2)
 
     rtde_c.moveL(bigRodAbovePose, 0.4, 0.5)
     if not successful_insertion:
