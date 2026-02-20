@@ -19,30 +19,40 @@ from column_def_csv import ColumnDefinitionCSVFile as c_def
 from column_def_csv import Robot_Attribute as rob_att
 from RobotiqHandE import RobotiqGripper
 import socket
+from pathlib import Path
 
 ARDUINO_IP = "192.168.4.1"
 PORT = 5000
 
-# --------------  CONFIGURATION  ----------------
-
-folder_name = "devi01_test/"
+# ##########################
+# Gloal variables
+# ##########################
+data = []
 recording = False
 program_running = True
+load_cell_value: int = 0
 insertion = 1
-num_insertions = 1
-data = []
-deltatime = 0.002 #in seconds
-min_max_deviation = 0.0 #in meters, less devi: 0.0001, much devi: 0.001
-angular_error = np.deg2rad(0.0) #in degrees
-bigRodAbovePose = np.array([-0.3724, -0.3274, 0.06, 3.079, -0.625, 0.0])
-bigRodGraspPose = np.array([-0.3724, -0.3274, 0.0, 3.079, -0.625, 0.0])
-bigHole03AbovePose = np.array([-0.52932, -0.30131, 0.06, 3.079, -0.625, 0.0])
-bigHole02AbovePose = np.array([-0.53889, -0.32441, 0.06, 3.079, -0.625, 0.0])
-bigHole01AbovePose = np.array([-0.5484, -0.34798, 0.06, 3.079, -0.625, 0.0])
+
+script_dir = Path(__file__).parent  # /src/robotics
+project_root = script_dir.parent.parent  # go up to project root
+folder_name = str(project_root)
+
+# ##########################
+# Configuration
+# ##########################
+use_load_cell_feedback = True
+folder_name = str(project_root / "test_recorded_data" / "real_test/")
+num_insertions = 10
+deltatime = 0.005 #in seconds
+min_max_deviation = 0.0003 #in meters, less devi: 0.0001, much devi: 0.001
+angular_error = np.deg2rad(3.0) #in degrees
+bigRodAbovePose = np.array([-0.37373, -0.32883, 0.085, 3.079, -0.625, 0.0])
+bigRodGraspPose = np.array([-0.37373, -0.32883, 0.0, 3.079, -0.625, 0.0])
+bigHole03AbovePose = np.array([-0.52932, -0.30131, 0.085, 3.079, -0.625, 0.0])
+bigHole02AbovePose = np.array([-0.53889, -0.32441, 0.085, 3.079, -0.625, 0.0])
+bigHole01AbovePose = np.array([-0.5492, -0.349, 0.085, 3.079, -0.625, 0.0])
 
 # -----------------------------------------------
-
-# a failed
 
 ur_ip = "192.168.1.11"
 rtde_c = rtde_control.RTDEControlInterface(ur_ip)
@@ -69,13 +79,8 @@ def approx_force_to_for_value(force_n: float,
 
 
 def init_gripper(gripper: RobotiqGripper, ur_ip: str):
-    # Typical URCap socket endpoint for Robotiq is port 63352. :contentReference[oaicite:4]{index=4}
     gripper.connect(hostname=ur_ip, port=63352, socket_timeout=2.0)
-
-    # Activate + (optional) auto-calibrate travel range
     gripper.activate(auto_calibrate=True)
-
-    # Open once to a known state
     gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
 
 
@@ -137,7 +142,8 @@ def listen_robot_data():
             # print(actual_force)
 
 def receive_loadcell_arduino():
-    while True:
+    global load_cell_value
+    while program_running:
         try:
             print(f"Connecting to {ARDUINO_IP}:{PORT} ...")
             s = socket.create_connection((ARDUINO_IP, PORT), timeout=10.0)  # connect timeout only
@@ -147,20 +153,20 @@ def receive_loadcell_arduino():
             print("Connected. Receiving values...")
 
             buf = b""
-            while True:
+            while program_running:
                 chunk = s.recv(4096)
                 if not chunk:
                     raise ConnectionError("socket closed")
                 buf += chunk
 
-                while b"\n" in buf:
+                while b"\n" in buf and program_running:
                     line, buf = buf.split(b"\n", 1)
                     line = line.strip()
                     if not line:
                         continue
                     try:
-                        raw = int(line.decode("ascii", errors="ignore"))
-                        print(raw)
+                        load_cell_value = int(line.decode("ascii", errors="ignore"))
+                        # print(load_cell_value)
                     except ValueError:
                         # e.g. HELLO
                         pass
@@ -230,17 +236,14 @@ def save_data_to_csv(f_data, idx, deviation, angle_radius, successful_insertion,
 # thread1.start()
 # rtde_c.zeroFtSensor()
 thread1 = threading.Thread(target=listen_robot_data)
-thread2 = threading.Thread(target=receive_loadcell_arduino)
+if use_load_cell_feedback:
+    thread2 = threading.Thread(target=receive_loadcell_arduino)
 
 rtde_c.moveL(bigRodAbovePose)
 init_gripper(gripper, ur_ip)
 thread1.start()
-thread2.start()
-
-selection_vector = [1, 1, 1, 1, 1, 1]
-wrench_down = [0, 0, -10, 0, 0, 0]
-force_type = 2
-limits = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+if use_load_cell_feedback:
+    thread2.start()
 
 for i in range(num_insertions):
     rtde_c.zeroFtSensor()
@@ -259,10 +262,10 @@ for i in range(num_insertions):
         
     
     insertion = 1
-    # angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
-    # radius = np.random.uniform(0, min_max_deviation)  # Random radius
-    angle = 0.0
-    radius = min_max_deviation
+    angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
+    radius = np.random.uniform(0, min_max_deviation)  # Random radius
+    # angle = 0.0
+    # radius = min_max_deviation
     
     # Convert polar to Cartesian coordinates
     deviation_x = radius * np.cos(angle)
@@ -275,43 +278,104 @@ for i in range(num_insertions):
     # insertion
     #concat this shit
     insertionPoseUP = bigHole01AbovePose + devi
-    insertionPoseDown = insertionPoseUP + np.array([0, 0, -0.05, 0, 0, 0])
+    insertionPoseDown = insertionPoseUP + np.array([0, 0, -0.049, 0, 0, 0])
 
-    rtde_c.moveL(insertionPoseUP, 0.4, 0.5)
     recording = True
+    rtde_c.moveL(insertionPoseUP, 0.4, 0.5)
 
-    rtde_c.forceMode([0,0,0,0,0,0], selection_vector, wrench_down, force_type, limits)
-    rtde_c.moveL(insertionPoseDown, 0.1, 0.2, asynchronous=True)
-    ts = time.time()
+    # Good practice: avoid entering force mode right after motion without a tiny pause
+    time.sleep(0.02)  # UR recommends >=0.02s before force mode in many cases :contentReference[oaicite:6]{index=6}
+
+    rtde_c.zeroFtSensor()  # reduce bias (especially important with gripper/payload) :contentReference[oaicite:7]{index=7}
+    rtde_c.forceModeSetDamping(0.1)
+    rtde_c.forceModeSetGainScaling(1.2)
+
+    task_frame = insertionPoseUP
+    selection_vector = [1, 1, 0, 1, 1, 0]
+    wrench = [0, 0, 0, 0, 0, 0]
+    limits = [0.05, 0.05, 0.02, 0.5, 0.5, 0.2]
+
+    rtde_c.forceMode(task_frame, selection_vector, wrench, 2, limits)
+
+    rtde_c.moveL(insertionPoseDown, 0.03, 0.3, asynchronous=True)
+
+    t0 = time.time()
+    stall_t0 = None
+    TIMEOUT = 4.0
+    successful_insertion = False
 
     while True:
-        if time.time() - ts > 2.0:
-            rtde_c.stopL(5.0)
-            print("2 second time out")
-            print("Fail, the distance is:", np.linalg.norm(current_pose - insertionPoseDown))
-            timeout = True
+        pose  = rtde_r.getActualTCPPose()
+        speed = rtde_r.getActualTCPSpeed()
+        force = rtde_r.getActualTCPForce()
+
+        # success: position reached (translation only)
+        # if np.linalg.norm(np.array(pose[:3]) - np.array(insertionPoseDown[:3])) < 0.001:
+        #     print("Success")
+        #     successful_insertion = True
+        #     rtde_c.stopL(1.0)
+        #     break
+
+        # timeout
+        if time.time() - t0 > TIMEOUT:
+            print("Timeout -> Fail")
+            successful_insertion = False
+            rtde_c.stopL(1.0)
             break
-        current_pose = rtde_r.getActualTCPPose()
-        if np.linalg.norm(current_pose - insertionPoseDown) <= 0.001:
-            rtde_c.stopL(5.0)
-            print("Success, the distance is:", np.linalg.norm(current_pose - insertionPoseDown))
+
+        # jam heuristics: not moving in z + pushing hard
+        vz = abs(speed[2])
+        fz = abs(force[2])
+
+        if vz < 0.002 and fz > 15:         # tune thresholds to your setup
+            if stall_t0 is None:
+                stall_t0 = time.time()
+            elif time.time() - stall_t0 > 0.25:
+                print("Stall/jam -> Fail")
+                successful_insertion = False
+                rtde_c.stopL(1.0)
+                break
+        else:
+            stall_t0 = None
+
+        # hard force safety threshold (optional)
+        if fz > 40:
+            print("Force limit -> Fail")
+            successful_insertion = False
+            rtde_c.stopL(1.0)
             break
-    time.sleep(0.002)
-    recording = False
+
+        if use_load_cell_feedback:
+            if load_cell_value > 4000:  # tune threshold to your setup
+                print(f"Successful insertion detected by load cell value was {load_cell_value}")
+                successful_insertion = True
+                rtde_c.stopL(1.0)
+                break
+
+        time.sleep(0.01)
+
     rtde_c.forceModeStop()
 
-    successful_insertion = bool(int(input("Was the insertion successful? (1/0): ")))
-    # save_data_to_csv(data, i+1, devi.tolist(), [angle, radius], successful_insertion, "big_rod", "big_hole_tight")
+    recording = False
+
+    if not use_load_cell_feedback:
+        successful_insertion = False
+    
+    input("Continue?")
+    save_data_to_csv(data, i+1, devi.tolist(), [angle, radius], successful_insertion, "big_rod", "big_hole_tight")
     data = []
+    if not successful_insertion:
+        gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
+
     rtde_c.moveL(insertionPoseUP, 0.05, 0.2)
 
     rtde_c.moveL(bigRodAbovePose, 0.4, 0.5)
+
     if not successful_insertion:
-        gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
-        input("Press Enter to continue...")
+        input("place the rod and continue")
         continue
     
-    rtde_c.moveL(bigRodAbovePose + np.array([0, 0, -0.06, 0, 0, 0]), 0.2, 0.5)
+    rtde_c.moveL(bigRodGraspPose, 0.2, 0.5)
     gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
     rtde_c.moveL(bigRodAbovePose, 0.2, 0.5)
 
@@ -322,4 +386,6 @@ for i in range(num_insertions):
 program_running = False
 
 thread1.join()
+if use_load_cell_feedback:
+    thread2.join()
 
