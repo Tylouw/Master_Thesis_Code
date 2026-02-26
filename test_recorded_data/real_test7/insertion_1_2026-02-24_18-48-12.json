@@ -1,0 +1,29 @@
+{
+  "saved_at": "2026-02-24T18:48:12.276180",
+  "sample_rate_Hz": 200.0,
+  "num_samples": 800,
+  "deviation": [
+    -6.313632063197308e-05,
+    -0.00024934775748634125,
+    0.0,
+    -0.01177687676615622,
+    0.044498811359640775,
+    0.0
+  ],
+  "angle_radius": [
+    4.464395293316284,
+    0.00025721683293752483
+  ],
+  "successful_insertion": true,
+  "failure_reason": null,
+  "insertion_task": "small_rod",
+  "tolerance": 0.1,
+  "all_config": {
+    "folder_name": "/home/jwobber/Documents/Master_Thesis_Code/test_recorded_data/real_test7",
+    "sequence_length": 4.0,
+    "num_insertions": 5,
+    "sample_rate": 200.0,
+    "deltatime": 0.005,
+    "min_max_deviation": 0.0003,
+    "angular_error": 0.05235987755982989,
+    "insertionTask": 

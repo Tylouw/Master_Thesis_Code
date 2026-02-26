@@ -15,7 +15,7 @@ class Robot_Attribute(Enum):
     temp_joints = "temp_joints"
 
 class ColumnDefinitionCSVFile:
-    numInsertion: str = ["num_insertion"]
+    numInsertion: str = ["timestamp[s]"]
     numInsertionOld: str = ["number of current insertion [0]"]
     tcp_force: str = ["tcp_force_x[N]", "tcp_force_y[N]", "tcp_force_z[N]", "tcp_force_rx[Nm?]", "tcp_force_ry[Nm?]", "tcp_force_rz[Nm?]"]
     tcp_pose_position: str = ["tcp_pose_x[m]", "tcp_pose_y[m]", "tcp_pose_z[m]"]

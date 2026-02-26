@@ -1,11 +1,5 @@
 #source ./.venv/bin/activate
 
-#[0.12950492847737058, -0.43499271842346005, 0.3925542462754197, 1.273850784616154, -2.7994716520205136, 0.032368344188906606]
-# joint angles, joint velocities, joint torques
-# power/current consumption of each joint and total robot
-# TCP position, orientation, velocity, angular velocity
-# Acceleration data for the endeffector
-import random
 import rtde_control
 import rtde_receive
 import numpy as np
@@ -19,45 +13,73 @@ from column_def_csv import ColumnDefinitionCSVFile as c_def
 from column_def_csv import Robot_Attribute as rob_att
 from RobotiqHandE import RobotiqGripper
 import socket
-from pathlib import Path
 
-ARDUINO_IP = "192.168.4.1"
-PORT = 5000
+from record_config import RecordConfig, InsertionTask, ToleranceLevel
+
+
 
 # ##########################
 # Gloal variables
 # ##########################
+ARDUINO_IP = "192.168.4.1"
+PORT = 5000
+
 data = []
 recording = False
 program_running = True
 load_cell_value: int = 0
 insertion = 1
 
-script_dir = Path(__file__).parent  # /src/robotics
-project_root = script_dir.parent.parent  # go up to project root
-folder_name = str(project_root)
+ur_ip = "192.168.1.11"
+rtde_c = rtde_control.RTDEControlInterface(ur_ip)
+rtde_r = rtde_receive.RTDEReceiveInterface(ur_ip)
+gripper = RobotiqGripper()
+
+
 
 # ##########################
 # Configuration
 # ##########################
 use_load_cell_feedback = True
-folder_name = str(project_root / "test_recorded_data" / "real_test/")
-num_insertions = 10
-deltatime = 0.005 #in seconds
-min_max_deviation = 0.0003 #in meters, less devi: 0.0001, much devi: 0.001
-angular_error = np.deg2rad(3.0) #in degrees
-bigRodAbovePose = np.array([-0.37373, -0.32883, 0.085, 3.079, -0.625, 0.0])
-bigRodGraspPose = np.array([-0.37373, -0.32883, 0.0, 3.079, -0.625, 0.0])
-bigHole03AbovePose = np.array([-0.52932, -0.30131, 0.085, 3.079, -0.625, 0.0])
-bigHole02AbovePose = np.array([-0.53889, -0.32441, 0.085, 3.079, -0.625, 0.0])
-bigHole01AbovePose = np.array([-0.5492, -0.349, 0.085, 3.079, -0.625, 0.0])
 
+default_orientation = np.array([3.079, -0.625, 0.0]) # Euler XYZ in radians, same for all poses in this example
+default_height = 0.285 - rtde_c.getTCPOffset()[2] # in meters, same for all poses in this example
+
+bigRodHolderPose_Up = np.concatenate([np.array([-0.37373, -0.32883, default_height]), default_orientation])
+bigRodHolderPose_Down = np.concatenate([np.array([-0.37373, -0.32883, default_height - 0.085]), default_orientation])
+
+bigRodInsertionPose_01 = np.concatenate([np.array([-0.52932, -0.30131, default_height]), default_orientation]) # tight
+bigRodInsertionPose_02 = np.concatenate([np.array([-0.53889, -0.32441, default_height]), default_orientation]) # medium
+bigRodInsertionPose_03 = np.concatenate([np.array([-0.5492, -0.349, default_height]), default_orientation]) # loose
+
+smallRodHolderPose_Up = np.concatenate([np.array([-0.38156, -0.34956, default_height]), default_orientation])
+smallRodHolderPose_Down = np.concatenate([np.array([-0.38156, -0.34956, default_height - 0.085]), default_orientation])
+
+smallRodInsertionPose_01 = np.concatenate([np.array([-0.50254, -0.36721, default_height]), default_orientation]) # tight
+smallRodInsertionPose_02 = np.concatenate([np.array([-0.49305, -0.34405, default_height]), default_orientation]) # medium
+smallRodInsertionPose_03 = np.concatenate([np.array([-0.48365, -0.32101, default_height]), default_orientation]) # loose
+
+config = RecordConfig(
+    sequence_length=4.0, #seconds
+    num_insertions=5,
+    insertionTask=InsertionTask.small_rod,
+    tolerance=ToleranceLevel.tight,
+    holderPose_Up=smallRodHolderPose_Up,
+    holderPose_Down=smallRodHolderPose_Down,
+    insertionPose=smallRodInsertionPose_01,
+)
+config.setSampleRateHz(400.0)
+config.setSavePath("test_recorded_data/real_test10/")
+config.setDeviationMM(0.2)
+config.setAngularErrorDeg(3.0)
+
+config.print_config()
+sample_start_idx, session_start_idx = config.getSampleSessionStart()
+# print(config.getSFCount())  # just a quick check to see how many samples/sessions already exist in the folder, for naming the next files to save without overwriting
+# exit()
 # -----------------------------------------------
 
-ur_ip = "192.168.1.11"
-rtde_c = rtde_control.RTDEControlInterface(ur_ip)
-rtde_r = rtde_receive.RTDEReceiveInterface(ur_ip)
-gripper = RobotiqGripper()
+
 
 
 # -2, -1, 0, 1, 2
@@ -104,7 +126,7 @@ def close_until_force_limit(gripper: RobotiqGripper,
         RobotiqGripper.ObjectStatus.STOPPED_OUTER_OBJECT,
         RobotiqGripper.ObjectStatus.STOPPED_INNER_OBJECT,
     ):
-        print(f"Object detected. Stopped at pos={final_pos}, force_setting(FOR)={for_value}")
+        # print(f"Object detected. Stopped at pos={final_pos}, force_setting(FOR)={for_value}")
         return True
 
     if obj_status == RobotiqGripper.ObjectStatus.AT_DEST:
@@ -118,27 +140,43 @@ def close_until_force_limit(gripper: RobotiqGripper,
 
 def listen_robot_data():
     while program_running:
+        if not recording:
+            time.sleep(0.001)   # yield CPU, reduce jitter
+            continue
+        next_t = start = time.perf_counter()
         while recording:
-            temp_data = np.array([insertion]) # number of current insertion [0]
-            force = np.array(rtde_r.getActualTCPForce())
-            actual_pose = np.array(rtde_r.getActualTCPPose())
-            R_6x6 = np.zeros((6,6))
-            R_6x6[:3,:3] = np.array(sm.SE3.Ry(180,'deg') * sm.SE3.EulerVec(actual_pose[3:]))[:3,:3]
-            R_6x6[3:,3:] = np.array(sm.SE3.Ry(180,'deg') * sm.SE3.EulerVec(actual_pose[3:]))[:3,:3]
-            force = (R_6x6 @ force.T).T
-            temp_data = np.concatenate((temp_data, force)) # TCP Force [1:7]
-            temp_data = np.concatenate((temp_data, actual_pose)) # TCP Pose [7:13]
-            temp_data = np.concatenate((temp_data, rtde_r.getActualTCPSpeed())) # TCP Velocity [13:19]
-            temp_data = np.concatenate((temp_data, rtde_r.getActualQ())) # Joint Angles [19:25]
-            temp_data = np.concatenate((temp_data, rtde_r.getActualQd())) # Joint Velocity [25:31]
-            temp_data = np.concatenate((temp_data, rtde_r.getActualToolAccelerometer())) # Tool Accelerometer [31:34]
-            temp_data = np.concatenate((temp_data, [rtde_r.getActualRobotCurrent()])) # Current consumption of whole robot [34]
-            temp_data = np.concatenate((temp_data, [rtde_r.getActualRobotVoltage()])) # Voltage consumption of whole robot [35]
-            temp_data = np.concatenate((temp_data, rtde_r.getActualCurrent())) # Current consumption of each joint [36:42]
-            temp_data = np.concatenate((temp_data, rtde_r.getJointTemperatures())) # Temperature of each joint [42:48]
+            now = time.perf_counter()
+            if now < next_t:
+                time.sleep(next_t - now)
+            
 
-            data.append(temp_data)
-            time.sleep(deltatime)
+            t_sample = time.perf_counter()
+            force = rtde_r.getActualTCPForce()            # 6
+            pose = rtde_r.getActualTCPPose()              # 6
+            speed = rtde_r.getActualTCPSpeed()            # 6
+            q = rtde_r.getActualQ()                       # 6
+            qd = rtde_r.getActualQd()                     # 6
+            acc = rtde_r.getActualToolAccelerometer()     # 3
+            Irobot = rtde_r.getActualRobotCurrent()       # 1
+            Vrobot = rtde_r.getActualRobotVoltage()       # 1
+            Ij = rtde_r.getActualCurrent()                # 6
+            Tj = rtde_r.getJointTemperatures()            # 6
+
+            row = np.empty((48,), dtype=np.float32)
+            row[0] = t_sample - start
+            row[1:7] = force
+            row[7:13] = pose
+            row[13:19] = speed
+            row[19:25] = q
+            row[25:31] = qd
+            row[31:34] = acc
+            row[34] = Irobot
+            row[35] = Vrobot
+            row[36:42] = Ij
+            row[42:48] = Tj
+
+            data.append(row)
+            next_t += config.deltatime
             # print(actual_force)
 
 def receive_loadcell_arduino():
@@ -183,7 +221,64 @@ def move_world_frame(desired_pose, vel = 0.2, acc = 0.3, asy = False):
     target = np.concatenate((togoto.t,togoto.eulervec()))
     return rtde_c.moveL(target, vel, acc, asynchronous = asy) # TODO: do asynch true to be able to stop it
 
-def save_data_to_csv(f_data, idx, deviation, angle_radius, successful_insertion, obj, holeSize):
+import numpy as np
+import spatialmath as sm  # or whatever import name you use (you had `sm` already)
+
+def transform_forces_after_recording(data: np.ndarray,
+                                     force_cols: slice = slice(1, 7),
+                                     pose_cols: slice = slice(7, 13)) -> np.ndarray:
+    """
+    Transform TCP wrench (force+torque) for each row AFTER recording.
+
+    Modifies `data` in-place and returns it.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Shape [N, D]. Must contain force in force_cols (6 values)
+        and pose in pose_cols (6 values), where pose[3:] is rotation vector.
+    force_cols : slice
+        Columns containing [Fx, Fy, Fz, Tx, Ty, Tz] (length 6).
+    pose_cols : slice
+        Columns containing [x, y, z, rx, ry, rz] (length 6).
+
+    Returns
+    -------
+    np.ndarray
+        The same array object (modified in-place).
+    """
+    if not isinstance(data, np.ndarray):
+        data = np.asarray(data)
+
+    if data.ndim != 2:
+        raise ValueError(f"data must be 2D [N,D], got shape {data.shape}")
+
+    # Validate slices length
+    if (force_cols.stop - force_cols.start) != 6:
+        raise ValueError("force_cols must span exactly 6 columns")
+    if (pose_cols.stop - pose_cols.start) != 6:
+        raise ValueError("pose_cols must span exactly 6 columns")
+
+    # Constant part
+    Ry180 = sm.SE3.Ry(180, 'deg')
+
+    for i in range(data.shape[0]):
+        actual_pose = data[i, pose_cols]         # [x,y,z, rx,ry,rz]
+        force = data[i, force_cols]              # [Fx,Fy,Fz, Tx,Ty,Tz]
+
+        # Your exact conversion method
+        R_6x6 = np.zeros((6, 6), dtype=np.float64)
+        R3 = np.array(Ry180 * sm.SE3.EulerVec(actual_pose[3:]), dtype=np.float64)[:3, :3]
+        R_6x6[:3, :3] = R3
+        R_6x6[3:, 3:] = R3
+        force_tf = (R_6x6 @ force.reshape(6, 1)).reshape(6,)
+
+        # Write back in-place
+        data[i, force_cols] = force_tf.astype(data.dtype, copy=False)
+
+    return data
+
+def save_data_to_csv(f_data, idx: int, session: int, deviation, angle_radius, successful_insertion, failure_reason: str):
     column_names = (
         c_def.numInsertion +
         c_def.mapping_new[rob_att.force.name][0] +
@@ -203,67 +298,66 @@ def save_data_to_csv(f_data, idx, deviation, angle_radius, successful_insertion,
 
     timestamp = datetime.now()
     timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
-    # Prepare filenames
-    # basename = f"wear_down_{idx}_{timestamp_str}"
-    basename = f"insertion_{idx}_{timestamp_str}"
-    csv_filename = folder_name + basename + ".csv"
-    json_filename = folder_name + basename + ".json"
 
-    # 1) Save CSV (data only)
+    basename = f"sample_{idx}_session_{session}"
+    csv_filename = config.folder_name + "/" + basename + ".csv"
+    json_filename = config.folder_name + "/" + basename + ".json"
+
     df.to_csv(csv_filename, index=False)
-    print("saved file:", csv_filename)
-
-    # 2) Collect metadata
+    
     metadata = {
         "saved_at": timestamp.isoformat(),
-        "deltatime": deltatime,
+        "saved_in": config.folder_name,
+        "corresponding_csv": csv_filename,
+        "sample_rate_Hz": config.sample_rate,
+        "sample_deltatime_s": config.deltatime,
+        "num_samples": len(f_data),
+        "num_insertions": config.num_insertions,
+        "sequence_length_s": config.sequence_length,
         "deviation": deviation,
         "angle_radius": angle_radius,
+        "min_max_deviation_mm": config.min_max_deviation_mm,
+        "min_max_deviation_m": config.min_max_deviation,
+        "angular_error_deg": config.angular_error_deg,
+        "angular_error_rad": config.angular_error,
         "successful_insertion": successful_insertion,
-        "insertion_object": obj,
-        "hole_size": holeSize
+        "failure_reason": failure_reason,
+        "insertion_task": config.insertionTask.value,
+        "tolerance": config.tolerance.value,
+        "holderPose_Up": config.holderPose_Up.tolist(),
+        "holderPose_Down": config.holderPose_Down.tolist(),
+        "insertionPose": config.insertionPose.tolist(),
     }
     with open(json_filename, "w") as jf:
         json.dump(metadata, jf, indent=2)
-    print("saved metadata:", json_filename)
+    print("saved csv and metadata json")
 
 
 
-# desired_pose = sm.SE3(deviation_position[0], deviation_position[1],-0.06 + deviation_position[2]) * sm.SE3.Rx(deviation_orientation[0],'deg') * sm.SE3.Ry(deviation_orientation[1],'deg') * sm.SE3.Rz(deviation_orientation[2],'deg') 
-# zero_pose = sm.SE3(deviation_position[0], deviation_position[1], deviation_position[2]) * sm.SE3.Rx(deviation_orientation[0],'deg') * sm.SE3.Ry(deviation_orientation[1],'deg') * sm.SE3.Rz(deviation_orientation[2],'deg') 
-
-# thread1 = threading.Thread(target=listen_robot_data)
-# thread1.start()
-# rtde_c.zeroFtSensor()
 thread1 = threading.Thread(target=listen_robot_data)
 if use_load_cell_feedback:
     thread2 = threading.Thread(target=receive_loadcell_arduino)
 
-rtde_c.moveL(bigRodAbovePose)
+rtde_c.moveL(config.holderPose_Up)
 init_gripper(gripper, ur_ip)
 thread1.start()
 if use_load_cell_feedback:
     thread2.start()
 
-for i in range(num_insertions):
-    rtde_c.zeroFtSensor()
-    rtde_c.moveL(bigRodGraspPose, 0.1, 0.5)
-    close_until_force_limit(gripper, target_force_n=50.0, speed=128)
-    rtde_c.moveL(bigRodAbovePose, 0.1, 0.5)
-    # close_until_force_limit(gripper, target_force_n=20.0, speed=128)
+num_successful = 0
+num_failed = 0
 
-    # while gripper.get_current_position() > 200:
-    #     print("Failed to grasp the rod properly, trying again")
-    #     gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
-    #     rtde_c.moveL(bigRodAbovePose + np.array([0, 0, -0.06, 0, 0, 0]), 0.1, 0.5)
-    #     close_until_force_limit(gripper, target_force_n=20.0, speed=128)
-    #     rtde_c.moveL(bigRodAbovePose, 0.1, 0.5)
-    #     close_until_force_limit(gripper, target_force_n=20.0, speed=128)
-        
+for i in range(config.num_insertions):
+    print(f"\n=== Starting insertion {i+1}/{config.num_insertions} ===")
+    rtde_c.zeroFtSensor()
+    rtde_c.moveL(config.holderPose_Down, 0.1, 0.5)
+    close_until_force_limit(gripper, target_force_n=50.0, speed=128)
+    rtde_c.moveL(config.holderPose_Up, 0.1, 0.5)
+
+    # exit()
     
-    insertion = 1
     angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
-    radius = np.random.uniform(0, min_max_deviation)  # Random radius
+    radius = np.random.uniform(0, config.min_max_deviation)  # Random radius
     # angle = 0.0
     # radius = min_max_deviation
     
@@ -271,14 +365,16 @@ for i in range(num_insertions):
     deviation_x = radius * np.cos(angle)
     deviation_y = radius * np.sin(angle)
     deviation_position = [deviation_x, deviation_y, 0.0]
-    deviation_orientation = [np.random.uniform(-angular_error, angular_error), np.random.uniform(-angular_error, angular_error), 0.0]
+    deviation_orientation = [np.random.uniform(-config.angular_error, config.angular_error), np.random.uniform(-config.angular_error, config.angular_error), 0.0]
     devi = np.concatenate((deviation_position, deviation_orientation))
 
     # break
     # insertion
     #concat this shit
-    insertionPoseUP = bigHole01AbovePose + devi
+    insertionPoseUP = config.insertionPose + devi
     insertionPoseDown = insertionPoseUP + np.array([0, 0, -0.049, 0, 0, 0])
+
+    sequence_start_time = time.perf_counter()
 
     recording = True
     rtde_c.moveL(insertionPoseUP, 0.4, 0.5)
@@ -301,25 +397,20 @@ for i in range(num_insertions):
 
     t0 = time.time()
     stall_t0 = None
-    TIMEOUT = 4.0
+    TIMEOUT = 2.3
     successful_insertion = False
+    failure_reason = None
 
     while True:
         pose  = rtde_r.getActualTCPPose()
         speed = rtde_r.getActualTCPSpeed()
         force = rtde_r.getActualTCPForce()
 
-        # success: position reached (translation only)
-        # if np.linalg.norm(np.array(pose[:3]) - np.array(insertionPoseDown[:3])) < 0.001:
-        #     print("Success")
-        #     successful_insertion = True
-        #     rtde_c.stopL(1.0)
-        #     break
-
-        # timeout
         if time.time() - t0 > TIMEOUT:
             print("Timeout -> Fail")
+            failure_reason = "Timeout"
             successful_insertion = False
+            num_failed += 1
             rtde_c.stopL(1.0)
             break
 
@@ -332,7 +423,9 @@ for i in range(num_insertions):
                 stall_t0 = time.time()
             elif time.time() - stall_t0 > 0.25:
                 print("Stall/jam -> Fail")
+                failure_reason = "Stall/jam"
                 successful_insertion = False
+                num_failed += 1
                 rtde_c.stopL(1.0)
                 break
         else:
@@ -341,14 +434,17 @@ for i in range(num_insertions):
         # hard force safety threshold (optional)
         if fz > 40:
             print("Force limit -> Fail")
+            failure_reason = "Force limit"
             successful_insertion = False
+            num_failed += 1
             rtde_c.stopL(1.0)
             break
 
         if use_load_cell_feedback:
             if load_cell_value > 4000:  # tune threshold to your setup
-                print(f"Successful insertion detected by load cell value was {load_cell_value}")
+                print(f"Successful insertion")
                 successful_insertion = True
+                num_successful += 1
                 rtde_c.stopL(1.0)
                 break
 
@@ -356,34 +452,43 @@ for i in range(num_insertions):
 
     rtde_c.forceModeStop()
 
+    remaining = config.sequence_length - (time.perf_counter() - sequence_start_time)
+    print(f"gotta wait {remaining:.2f} s")
+    if remaining > 0:
+        time.sleep(remaining)
+
     recording = False
 
     if not use_load_cell_feedback:
         successful_insertion = False
     
-    input("Continue?")
-    save_data_to_csv(data, i+1, devi.tolist(), [angle, radius], successful_insertion, "big_rod", "big_hole_tight")
+    # input("Continue?")
+    data_np = np.asarray(data)  # if you currently have a list of rows
+    data_np = transform_forces_after_recording(data_np)
+    save_data_to_csv(data_np, i+1 + sample_start_idx, session_start_idx+1, devi.tolist(), [angle, radius], successful_insertion, failure_reason)
     data = []
     if not successful_insertion:
         gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
 
     rtde_c.moveL(insertionPoseUP, 0.05, 0.2)
 
-    rtde_c.moveL(bigRodAbovePose, 0.4, 0.5)
+    rtde_c.moveL(config.holderPose_Up, 0.4, 0.5)
+
+    print(f"S: {num_successful}, F: {num_failed}")
+    S_total, F_total = config.getSFCount()
+    print(f"Total S: {S_total}, F: {F_total}")
 
     if not successful_insertion:
         input("place the rod and continue")
         continue
     
-    rtde_c.moveL(bigRodGraspPose, 0.2, 0.5)
+    rtde_c.moveL(config.holderPose_Down, 0.2, 0.5)
     gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
-    rtde_c.moveL(bigRodAbovePose, 0.2, 0.5)
+    rtde_c.moveL(config.holderPose_Up, 0.2, 0.5)
 
 
-# time.sleep(10)
 
-# movement_done = True
-program_running = False
+program_running = False # this stops the infinite loops in the threads
 
 thread1.join()
 if use_load_cell_feedback:

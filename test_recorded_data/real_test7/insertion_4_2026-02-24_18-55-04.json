@@ -1,0 +1,56 @@
+{
+  "saved_at": "2026-02-24T18:55:04.785174",
+  "sample_rate_Hz": 200.0,
+  "num_samples": 801,
+  "deviation": [
+    -9.211449924341582e-05,
+    7.151025697989216e-06,
+    0.0,
+    -0.05006994486111198,
+    -0.007737899589004338,
+    0.0
+  ],
+  "angle_radius": [
+    3.0641161243940793,
+    9.239165622175282e-05
+  ],
+  "successful_insertion": false,
+  "failure_reason": "Force limit",
+  "insertion_task": "small_rod",
+  "tolerance": 0.1,
+  "all_config": {
+    "folder_name": "/home/jwobber/Documents/Master_Thesis_Code/test_recorded_data/real_test7",
+    "sequence_length": 4.0,
+    "num_insertions": 5,
+    "sample_rate": 200.0,
+    "deltatime": 0.005,
+    "min_max_deviation": 0.0003,
+    "angular_error": 0.05235987755982989,
+    "insertionTask": "small_rod",
+    "tolerance": 0.1,
+    "holderPose_Up": [
+      -0.38156,
+      -0.34956,
+      0.085,
+      3.079,
+      -0.625,
+      0.0
+    ],
+    "holderPose_Down": [
+      -0.38156,
+      -0.34956,
+      0.0,
+      3.079,
+      -0.625,
+      0.0
+    ],
+    "insertionPose": [
+      -0.50254,
+      -0.36721,
+      0.085,
+      3.079,
+      -0.625,
+      0.0
+    ]
+  }
+}

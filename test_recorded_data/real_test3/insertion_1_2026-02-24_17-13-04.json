@@ -1,0 +1,20 @@
+{
+  "saved_at": "2026-02-24T17:13:04.918185",
+  "deltatime": 100.0,
+  "deviation": [
+    8.233859627953497e-05,
+    -1.070598437443224e-05,
+    0.0,
+    0.03617746483270634,
+    -0.04060218557380729,
+    0.0
+  ],
+  "angle_radius": [
+    6.153886812754027,
+    8.303169598839853e-05
+  ],
+  "successful_insertion": false,
+  "failure_reason": "Force limit",
+  "insertion_task": "small_rod",
+  "tolerance": 0.1
+}

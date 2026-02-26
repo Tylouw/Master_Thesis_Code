@@ -1,0 +1,54 @@
+{
+  "saved_at": "2026-02-25T15:25:46.020914",
+  "saved_in": "/home/jwobber/Documents/Master_Thesis_Code/test_recorded_data/real_test10",
+  "corresponding_csv": "/home/jwobber/Documents/Master_Thesis_Code/test_recorded_data/real_test10/sample_19_session_5.csv",
+  "sample_rate_Hz": 400.0,
+  "sample_deltatime_s": 0.0025,
+  "num_samples": 1601,
+  "num_insertions": 5,
+  "sequence_length_s": 4.0,
+  "deviation": [
+    0.00018634700744160358,
+    -2.3670609201099236e-05,
+    0.0,
+    -0.05061470189640832,
+    0.0006492739606785772,
+    0.0
+  ],
+  "angle_radius": [
+    6.156837596590109,
+    0.00018784436356300986
+  ],
+  "min_max_deviation_mm": 0.2,
+  "min_max_deviation_m": 0.0002,
+  "angular_error_deg": 3.0,
+  "angular_error_rad": 0.05235987755982989,
+  "successful_insertion": true,
+  "failure_reason": null,
+  "insertion_task": "small_rod",
+  "tolerance": 0.1,
+  "holderPose_Up": [
+    -0.38156,
+    -0.34956,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "holderPose_Down": [
+    -0.38156,
+    -0.34956,
+    -0.024999994039535553,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "insertionPose": [
+    -0.50254,
+    -0.36721,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ]
+}
