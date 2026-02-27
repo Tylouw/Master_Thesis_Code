@@ -1,0 +1,54 @@
+{
+  "saved_at": "2026-02-27T14:35:48.899652",
+  "saved_in": "/home/jwobber/Documents/Master_Thesis_Code/training_data/batch_1/small_rod_t0.1",
+  "corresponding_csv": "/home/jwobber/Documents/Master_Thesis_Code/training_data/batch_1/small_rod_t0.1/sample_55_session_2.csv",
+  "sample_rate_Hz": 500.0,
+  "sample_deltatime_s": 0.002,
+  "num_samples": 2001,
+  "num_insertions": 25,
+  "sequence_length_s": 4.0,
+  "deviation": [
+    -0.00011134499001400223,
+    -0.000113727798138848,
+    0.0,
+    0.009438927257944027,
+    0.03403042624693023,
+    0.0
+  ],
+  "angle_radius": [
+    3.937577254947365,
+    0.000159159413390251
+  ],
+  "min_max_deviation_mm": 0.25,
+  "min_max_deviation_m": 0.00025,
+  "angular_error_deg": 4.0,
+  "angular_error_rad": 0.06981317007977318,
+  "successful_insertion": true,
+  "failure_reason": null,
+  "insertion_task": "small_rod",
+  "tolerance": 0.1,
+  "holderPose_Up": [
+    -0.38113,
+    -0.34856,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "holderPose_Down": [
+    -0.38113,
+    -0.34856,
+    -0.024999994039535553,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "insertionPose": [
+    -0.50254,
+    -0.36721,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ]
+}

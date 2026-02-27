@@ -13,6 +13,8 @@ from column_def_csv import ColumnDefinitionCSVFile as c_def
 from column_def_csv import Robot_Attribute as rob_att
 from RobotiqHandE import RobotiqGripper
 import socket
+import numpy as np
+import spatialmath as sm  # or whatever import name you use (you had `sm` already)
 
 from record_config import RecordConfig, InsertionTask, ToleranceLevel
 
@@ -52,8 +54,8 @@ bigRodInsertionPose_01 = np.concatenate([np.array([-0.52932, -0.30131, default_h
 bigRodInsertionPose_02 = np.concatenate([np.array([-0.53889, -0.32441, default_height]), default_orientation]) # medium
 bigRodInsertionPose_03 = np.concatenate([np.array([-0.5492, -0.349, default_height]), default_orientation]) # loose
 
-smallRodHolderPose_Up = np.concatenate([np.array([-0.38156, -0.34956, default_height]), default_orientation])
-smallRodHolderPose_Down = np.concatenate([np.array([-0.38156, -0.34956, default_height - 0.085]), default_orientation])
+smallRodHolderPose_Up = np.concatenate([np.array([-0.38113, -0.34856, default_height]), default_orientation])
+smallRodHolderPose_Down = np.concatenate([np.array([-0.38113, -0.34856, default_height - 0.085]), default_orientation])
 
 smallRodInsertionPose_01 = np.concatenate([np.array([-0.50254, -0.36721, default_height]), default_orientation]) # tight
 smallRodInsertionPose_02 = np.concatenate([np.array([-0.49305, -0.34405, default_height]), default_orientation]) # medium
@@ -61,17 +63,18 @@ smallRodInsertionPose_03 = np.concatenate([np.array([-0.48365, -0.32101, default
 
 config = RecordConfig(
     sequence_length=4.0, #seconds
-    num_insertions=5,
+    num_insertions=25,
     insertionTask=InsertionTask.small_rod,
-    tolerance=ToleranceLevel.tight,
+    tolerance=ToleranceLevel.loose,
     holderPose_Up=smallRodHolderPose_Up,
     holderPose_Down=smallRodHolderPose_Down,
-    insertionPose=smallRodInsertionPose_01,
+    insertionPose=smallRodInsertionPose_03,
 )
-config.setSampleRateHz(400.0)
-config.setSavePath("test_recorded_data/real_test10/")
-config.setDeviationMM(0.2)
-config.setAngularErrorDeg(3.0)
+config.setSampleRateHz(500.0)
+# config.setSavePath("test_recorded_data/real_test11/")
+config.setSavePath("training_data/batch_1/small_rod_t0.3/")
+config.setDeviationMM(0.4)
+config.setAngularErrorDeg(4.5)
 
 config.print_config()
 sample_start_idx, session_start_idx = config.getSampleSessionStart()
@@ -221,8 +224,7 @@ def move_world_frame(desired_pose, vel = 0.2, acc = 0.3, asy = False):
     target = np.concatenate((togoto.t,togoto.eulervec()))
     return rtde_c.moveL(target, vel, acc, asynchronous = asy) # TODO: do asynch true to be able to stop it
 
-import numpy as np
-import spatialmath as sm  # or whatever import name you use (you had `sm` already)
+
 
 def transform_forces_after_recording(data: np.ndarray,
                                      force_cols: slice = slice(1, 7),
