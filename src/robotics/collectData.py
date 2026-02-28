@@ -47,12 +47,12 @@ use_load_cell_feedback = True
 default_orientation = np.array([3.079, -0.625, 0.0]) # Euler XYZ in radians, same for all poses in this example
 default_height = 0.285 - rtde_c.getTCPOffset()[2] # in meters, same for all poses in this example
 
-bigRodHolderPose_Up = np.concatenate([np.array([-0.37373, -0.32883, default_height]), default_orientation])
-bigRodHolderPose_Down = np.concatenate([np.array([-0.37373, -0.32883, default_height - 0.085]), default_orientation])
+bigRodHolderPose_Up = np.concatenate([np.array([-0.37296, -0.32824, default_height]), default_orientation])
+bigRodHolderPose_Down = np.concatenate([np.array([-0.37296, -0.32824, default_height - 0.085]), default_orientation])
 
-bigRodInsertionPose_01 = np.concatenate([np.array([-0.52932, -0.30131, default_height]), default_orientation]) # tight
-bigRodInsertionPose_02 = np.concatenate([np.array([-0.53889, -0.32441, default_height]), default_orientation]) # medium
-bigRodInsertionPose_03 = np.concatenate([np.array([-0.5492, -0.349, default_height]), default_orientation]) # loose
+bigRodInsertionPose_01 = np.concatenate([np.array([-0.5492, -0.349, default_height]), default_orientation]) # tight
+bigRodInsertionPose_02 = np.concatenate([np.array([-0.53949, -0.32519, default_height]), default_orientation]) # medium
+bigRodInsertionPose_03 = np.concatenate([np.array([-0.52982, -0.30205, default_height]), default_orientation]) # loose
 
 smallRodHolderPose_Up = np.concatenate([np.array([-0.38113, -0.34856, default_height]), default_orientation])
 smallRodHolderPose_Down = np.concatenate([np.array([-0.38113, -0.34856, default_height - 0.085]), default_orientation])
@@ -61,20 +61,27 @@ smallRodInsertionPose_01 = np.concatenate([np.array([-0.50254, -0.36721, default
 smallRodInsertionPose_02 = np.concatenate([np.array([-0.49305, -0.34405, default_height]), default_orientation]) # medium
 smallRodInsertionPose_03 = np.concatenate([np.array([-0.48365, -0.32101, default_height]), default_orientation]) # loose
 
+rectRodHolderPose_Up = np.concatenate([np.array([-0.38931, -0.3687, default_height]), default_orientation])
+rectRodHolderPose_Down = np.concatenate([np.array([-0.38931, -0.3687, default_height - 0.085]), default_orientation])
+
+rectRodInsertionPose_01 = np.concatenate([np.array([-0.50254, -0.36721, default_height]), default_orientation]) # tight
+rectRodInsertionPose_02 = np.concatenate([np.array([-0.49305, -0.34405, default_height]), default_orientation]) # medium
+rectRodInsertionPose_03 = np.concatenate([np.array([-0.57579, -0.28315, default_height]), default_orientation]) # loose
+
 config = RecordConfig(
     sequence_length=4.0, #seconds
     num_insertions=25,
-    insertionTask=InsertionTask.small_rod,
+    insertionTask=InsertionTask.rect_rod,
     tolerance=ToleranceLevel.loose,
-    holderPose_Up=smallRodHolderPose_Up,
-    holderPose_Down=smallRodHolderPose_Down,
-    insertionPose=smallRodInsertionPose_03,
+    holderPose_Up=rectRodHolderPose_Up,
+    holderPose_Down=rectRodHolderPose_Down,
+    insertionPose=rectRodInsertionPose_03,
 )
 config.setSampleRateHz(500.0)
 # config.setSavePath("test_recorded_data/real_test11/")
-config.setSavePath("training_data/batch_1/small_rod_t0.3/")
-config.setDeviationMM(0.4)
-config.setAngularErrorDeg(4.5)
+config.setSavePath("training_data/batch_1/rect_rod_t0.3/")
+config.setDeviationMM(0.07)
+config.setAngularErrorDeg(2.0)
 
 config.print_config()
 sample_start_idx, session_start_idx = config.getSampleSessionStart()

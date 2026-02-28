@@ -1,0 +1,54 @@
+{
+  "saved_at": "2026-02-28T15:56:07.080236",
+  "saved_in": "/home/jwobber/Documents/Master_Thesis_Code/training_data/batch_1/big_rod_t0.1",
+  "corresponding_csv": "/home/jwobber/Documents/Master_Thesis_Code/training_data/batch_1/big_rod_t0.1/sample_22_session_1.csv",
+  "sample_rate_Hz": 500.0,
+  "sample_deltatime_s": 0.002,
+  "num_samples": 2001,
+  "num_insertions": 50,
+  "sequence_length_s": 4.0,
+  "deviation": [
+    2.5641849984665528e-05,
+    5.315458495546622e-06,
+    0.0,
+    -0.04249137627235573,
+    0.03372265063471164,
+    0.0
+  ],
+  "angle_radius": [
+    0.20440120847126203,
+    2.618699237510811e-05
+  ],
+  "min_max_deviation_mm": 0.2,
+  "min_max_deviation_m": 0.0002,
+  "angular_error_deg": 3.0,
+  "angular_error_rad": 0.05235987755982989,
+  "successful_insertion": false,
+  "failure_reason": "Force limit",
+  "insertion_task": "big_rod",
+  "tolerance": 0.1,
+  "holderPose_Up": [
+    -0.37373,
+    -0.32883,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "holderPose_Down": [
+    -0.37373,
+    -0.32883,
+    -0.024999994039535553,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "insertionPose": [
+    -0.5492,
+    -0.349,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ]
+}
