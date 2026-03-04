@@ -1,0 +1,40 @@
+{
+  "clip_policy": "end",
+  "data_root": "training_data/batch_1",
+  "feature_cols": [
+    "tcp_force_x[N]",
+    "tcp_force_y[N]",
+    "tcp_force_z[N]",
+    "tcp_force_rx[Nm?]",
+    "tcp_force_ry[Nm?]",
+    "tcp_force_rz[Nm?]"
+  ],
+  "fractions": [
+    0.1,
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0
+  ],
+  "iid_split": {
+    "mode": "group_split",
+    "n_groups": 9,
+    "n_samples": 900,
+    "seed": 123,
+    "test_groups": [
+      "small_rod_t0.2"
+    ],
+    "test_ratio": 0.15,
+    "val_groups": [
+      "rect_rod_t0.2"
+    ],
+    "val_ratio": 0.15
+  },
+  "model_preset": "small",
+  "n_samples": 900,
+  "normalize": "global",
+  "repeats": 5,
+  "seq_len": 2000,
+  "timestamp": "2026-03-03 15:42:50"
+}

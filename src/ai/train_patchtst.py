@@ -1,97 +1,163 @@
-# train_patchtst.py
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-import os
-import re
 from pathlib import Path
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Optional, Dict
 from collections import Counter
+import os
+import json
+import time
+import copy
 
 import numpy as np
-import copy
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-import time
 
-# Adjust import if your model file/module name differs
 from patchtst import PatchTSTClassifier, get_model_config, config_to_dict
 
 
 # -------------------------
-# Dataset
+# Dataset helpers
 # -------------------------
-USE_COLS = ["FX_Base", "FY_Base", "FZ_Base", "MuX_Base", "MuY_Base", "MuZ_Base"]
-LABEL_RE = re.compile(r"_(True|False)\.csv$", re.IGNORECASE)
+def _default_ckpt_name() -> str:
+    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    return f"patchtst_force_best_{ts}.pt"
+
+
+def _read_json(path: Path) -> Dict:
+    return json.loads(path.read_text())
+
+
+# Add/adjust column sets here if your CSV header differs
+KNOWN_FEATURE_SETS: List[List[str]] = [
+    # UR-style TCP wrench (example from earlier work)
+    ["tcp_force_x[N]", "tcp_force_y[N]", "tcp_force_z[N]", "tcp_force_rx[Nm]", "tcp_force_ry[Nm]", "tcp_force_rz[Nm]"],
+    # sometimes torque columns are named differently
+    ["tcp_force_x[N]", "tcp_force_y[N]", "tcp_force_z[N]", "tcp_torque_x[Nm]", "tcp_torque_y[Nm]", "tcp_torque_z[Nm]"],
+    # your previous dataset style (kept as fallback)
+    ["FX_Base", "FY_Base", "FZ_Base", "MuX_Base", "MuY_Base", "MuZ_Base"],
+]
+
+
+def infer_feature_cols(csv_path: Path, requested: Optional[List[str]]) -> List[str]:
+    header = list(pd.read_csv(csv_path, nrows=0).columns)
+
+    if requested is not None:
+        missing = [c for c in requested if c not in header]
+        if missing:
+            raise ValueError(f"{csv_path}: requested feature columns missing: {missing}\nHeader: {header}")
+        return requested
+
+    for cols in KNOWN_FEATURE_SETS:
+        if all(c in header for c in cols):
+            return cols
+
+    raise ValueError(
+        f"{csv_path}: could not auto-detect 6 feature columns.\n"
+        f"Header: {header}\n"
+        f"Fix: set TrainCfg.feature_cols explicitly to the 6 columns you want."
+    )
+
+
+def clip_or_pad(x: np.ndarray, seq_len: int, clip_policy: str) -> np.ndarray:
+    """
+    x: [L, C]
+    returns [seq_len, C]
+    """
+    L, C = x.shape
+    if L == seq_len:
+        return x
+    if L > seq_len:
+        if clip_policy == "end":
+            return x[-seq_len:, :]
+        elif clip_policy == "start":
+            return x[:seq_len, :]
+        else:
+            raise ValueError(f"Unknown clip_policy: {clip_policy} (use 'end' or 'start')")
+    # pad
+    out = np.zeros((seq_len, C), dtype=x.dtype)
+    out[:L, :] = x
+    return out
 
 
 class ForceCSVFolderDataset(Dataset):
     """
-    Loads one time series sample per CSV file.
+    One sample per CSV file.
 
-    Expected:
-      - Files under root_dir (recursive)
-      - Filename ends with _True.csv or _False.csv
-      - CSV has header with required columns
-
-    Returns:
-      x: FloatTensor [L, C]  (L=1000, C=6 by default)
-      y: FloatTensor []      (0.0 or 1.0) for BCEWithLogitsLoss
+    Expected structure (your case):
+      training_data/batch_1/<group_folder>/*.csv
+      training_data/batch_1/<group_folder>/*.json  (same base name)
+    JSON must contain: successful_insertion: true/false
     """
-    def __init__(self, root_dir: str | Path, seq_len: int = 1000, normalize: bool = True):
+    def __init__(
+        self,
+        root_dir: str | Path,
+        seq_len: int,
+        clip_policy: str = "end",
+        normalize: bool = True,
+        feature_cols: Optional[List[str]] = None,
+    ):
         self.root_dir = Path(root_dir)
-        self.seq_len = seq_len
-        self.normalize = normalize
+        self.seq_len = int(seq_len)
+        self.clip_policy = str(clip_policy)
+        self.normalize = bool(normalize)
+        self.feature_cols_requested = feature_cols  # can be None (auto)
 
         if not self.root_dir.exists():
             raise FileNotFoundError(f"Dataset root_dir not found: {self.root_dir}")
 
-        self.files = self._collect_files(self.root_dir)
-        if len(self.files) == 0:
-            raise RuntimeError(f"No labeled CSV files found under: {self.root_dir}")
+        self.samples: List[Dict] = self._index_samples()
 
-    @staticmethod
-    def _collect_files(root_dir: Path) -> List[Path]:
-        files: List[Path] = []
-        for p in root_dir.rglob("*.csv"):
-            if LABEL_RE.search(p.name):
-                files.append(p)
-        files.sort()
-        return files
+        if len(self.samples) == 0:
+            raise RuntimeError(f"No usable (csv+json) samples found under: {self.root_dir}")
 
-    @staticmethod
-    def label_from_name(filename: str) -> float:
-        m = LABEL_RE.search(filename)
-        if not m:
-            raise ValueError(f"Could not parse label from filename: {filename}")
-        return 1.0 if m.group(1).lower() == "true" else 0.0
+        # Determine feature columns once (from first file) if not explicit.
+        self.feature_cols = infer_feature_cols(self.samples[0]["csv"], self.feature_cols_requested)
+
+    def _index_samples(self) -> List[Dict]:
+        out = []
+        for csv_path in sorted(self.root_dir.rglob("*.csv")):
+            json_path = csv_path.with_suffix(".json")
+            if not json_path.exists():
+                continue
+
+            meta = _read_json(json_path)
+            if "successful_insertion" not in meta:
+                raise KeyError(f"{json_path}: missing key 'successful_insertion'")
+
+            y = 1.0 if bool(meta["successful_insertion"]) else 0.0
+            group = csv_path.parent.name  # folder = group/session/domain
+
+            out.append({"csv": csv_path, "json": json_path, "y": y, "group": group})
+
+        return out
 
     def __len__(self) -> int:
-        return len(self.files)
+        return len(self.samples)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        path = self.files[idx]
-        y = self.label_from_name(path.name)
+        s = self.samples[idx]
+        csv_path: Path = s["csv"]
+        y: float = float(s["y"])
 
-        df = pd.read_csv(path, usecols=USE_COLS)
+        # auto-detect (or validate) feature cols for THIS file too (in case headers differ)
+        cols = infer_feature_cols(csv_path, self.feature_cols_requested)
 
-        if df.shape[1] != len(USE_COLS):
-            raise ValueError(f"{path}: expected {len(USE_COLS)} cols, got {df.shape[1]}")
-        if df.shape[0] != self.seq_len:
-            raise ValueError(f"{path}: expected {self.seq_len} rows, got {df.shape[0]}")
+        df = pd.read_csv(csv_path, usecols=cols)
+        x = df.to_numpy(dtype=np.float32)  # [L, C]
 
-        x = df.to_numpy(dtype=np.float32)  # [L, 6]
+        x = clip_or_pad(x, seq_len=self.seq_len, clip_policy=self.clip_policy)
 
-        # Per-sample per-channel normalization (baseline)
+        # Per-sample per-channel normalization
         if self.normalize:
             mu = x.mean(axis=0, keepdims=True)
             sig = x.std(axis=0, keepdims=True) + 1e-6
             x = (x - mu) / sig
 
-        x_t = torch.from_numpy(x)                  # [L, C]
+        x_t = torch.from_numpy(x)                  # [seq_len, C]
         y_t = torch.tensor(y, dtype=torch.float32) # scalar
         return x_t, y_t
 
@@ -99,14 +165,6 @@ class ForceCSVFolderDataset(Dataset):
 # -------------------------
 # Train/Eval
 # -------------------------
-def _default_ckpt_name() -> str:
-    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    return f"patchtst_force_best_{ts}.pt"
-
-
-
-
-
 def set_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -119,24 +177,6 @@ def binary_accuracy_from_logits(logits: torch.Tensor, y: torch.Tensor, thr: floa
     correct = (pred == y).sum().item()
     total = y.numel()
     return int(correct), int(total)
-
-
-@torch.no_grad()
-def confusion_matrix_binary_from_logits(logits: torch.Tensor, y: torch.Tensor, thr: float = 0.5):
-    """
-    returns TP, FP, TN, FN for positive class y=1
-    """
-    if logits.dim() == 2 and logits.size(1) == 1:
-        logits = logits[:, 0]
-    probs = torch.sigmoid(logits)
-    pred = (probs >= thr).to(torch.int64)
-    y_i = y.to(torch.int64)
-
-    tp = ((pred == 1) & (y_i == 1)).sum().item()
-    fp = ((pred == 1) & (y_i == 0)).sum().item()
-    tn = ((pred == 0) & (y_i == 0)).sum().item()
-    fn = ((pred == 0) & (y_i == 1)).sum().item()
-    return int(tp), int(fp), int(tn), int(fn)
 
 
 def metrics_from_cm(tp: int, fp: int, tn: int, fn: int):
@@ -154,31 +194,28 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tupl
 
     total_loss = 0.0
     total = 0
-
-    # Collect all logits/labels for threshold sweep
     all_logits = []
     all_y = []
 
     for x, y in loader:
-        x = x.to(device, non_blocking=True)  # [B, L, C]
-        y = y.to(device, non_blocking=True)  # [B]
-
-        logits = model(x).squeeze(-1)        # [B]
+        x = x.to(device, non_blocking=True)
+        y = y.to(device, non_blocking=True)
+        logits = model(x).squeeze(-1)
         loss = criterion(logits, y)
+
         total_loss += loss.item() * x.size(0)
         total += x.size(0)
 
         all_logits.append(logits.detach().cpu())
         all_y.append(y.detach().cpu())
 
-    logits = torch.cat(all_logits, dim=0)  # [N]
-    y = torch.cat(all_y, dim=0)            # [N] float {0,1}
+    logits = torch.cat(all_logits, dim=0)
+    y = torch.cat(all_y, dim=0)
 
-    # Sweep thresholds
-    thresholds = torch.linspace(0.05, 0.95, steps=19)  # 0.05, 0.10, ..., 0.95
+    thresholds = torch.linspace(0.05, 0.95, steps=19)
     best_thr = 0.5
     best_bal_acc = -1.0
-    best_stats = None  # (tp, fp, tn, fn, acc, bal_acc, precision, recall, f1, specificity)
+    best_stats = None
 
     probs = torch.sigmoid(logits)
 
@@ -192,10 +229,9 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tupl
         tn = int(((pred == 0) & (y_i == 0)).sum().item())
         fn = int(((pred == 0) & (y_i == 1)).sum().item())
 
-        # Metrics
         precision, recall, f1, specificity = metrics_from_cm(tp, fp, tn, fn)
         acc = (tp + tn) / max(tp + tn + fp + fn, 1)
-        bal_acc = 0.5 * (recall + specificity)  # TPR + TNR / 2
+        bal_acc = 0.5 * (recall + specificity)
 
         if bal_acc > best_bal_acc:
             best_bal_acc = bal_acc
@@ -204,17 +240,10 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tupl
 
     tp, fp, tn, fn, acc, bal_acc, precision, recall, f1, specificity = best_stats
 
-    best_stats = {
+    stats = {
         "selection_metric": "balanced_accuracy",
         "best_threshold": float(best_thr),
-
-        # Confusion matrix at best threshold
-        "tp": int(tp),
-        "fp": int(fp),
-        "tn": int(tn),
-        "fn": int(fn),
-
-        # Metrics at best threshold
+        "tp": int(tp), "fp": int(fp), "tn": int(tn), "fn": int(fn),
         "acc": float(acc),
         "bal_acc": float(bal_acc),
         "precision": float(precision),
@@ -223,7 +252,6 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tupl
         "specificity": float(specificity),
     }
 
-
     print(f"Best threshold by balanced acc: {best_thr:.2f}")
     print(f"Confusion matrix (thr={best_thr:.2f}): TP={tp} FP={fp} TN={tn} FN={fn}")
     print(
@@ -231,8 +259,7 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> Tupl
         f"Precision={precision:.3f} Recall={recall:.3f} F1={f1:.3f} Specificity={specificity:.3f}"
     )
 
-    return total_loss / max(total, 1), acc, best_stats
-
+    return total_loss / max(total, 1), float(acc), stats
 
 
 def train_one_epoch(
@@ -246,8 +273,10 @@ def train_one_epoch(
     model.train()
     criterion = nn.BCEWithLogitsLoss()
 
-    # New AMP API (removes FutureWarning)
-    scaler = torch.amp.GradScaler("cuda", enabled=(amp and device.type == "cuda"))
+    scaler = torch.amp.GradScaler(
+        "cuda" if device.type == "cuda" else "cpu",
+        enabled=(amp and device.type == "cuda")
+    )
 
     total_loss = 0.0
     correct = 0
@@ -259,8 +288,8 @@ def train_one_epoch(
 
         optimizer.zero_grad(set_to_none=True)
 
-        with torch.amp.autocast(device_type="cuda", enabled=(amp and device.type == "cuda")):
-            logits = model(x).squeeze(-1)  # [B]
+        with torch.amp.autocast(device_type=device.type, enabled=(amp and device.type == "cuda")):
+            logits = model(x).squeeze(-1)
             loss = criterion(logits, y)
 
         scaler.scale(loss).backward()
@@ -279,12 +308,19 @@ def train_one_epoch(
 
     return total_loss / max(total, 1), correct / max(total, 1)
 
+
 @dataclass
 class TrainCfg:
-    model_preset: str = "small"
+    model_preset: str = "big"
 
-    data_root: str = "ForceDataNovo/Old_Fixture"
-    seq_len: int = 1000
+    # Your new structure
+    data_root: str = "training_data/batch_1"
+    seq_len: int = 2000
+    clip_policy: str = "end"  # "end" keeps the last seq_len rows (good if the event is near the end)
+
+    # If None: auto-detect from header. Otherwise set explicitly to your 6 columns.
+    # feature_cols: Optional[List[str]] = None
+    feature_cols = ["tcp_force_x[N]", "tcp_force_y[N]","tcp_force_z[N]","tcp_force_rx[Nm?]","tcp_force_ry[Nm?]","tcp_force_rz[Nm?]"]
 
     batch_size: int = 64
     num_workers: int = 4
@@ -295,13 +331,15 @@ class TrainCfg:
     grad_clip: float = 1.0
     seed: int = 42
 
-    # Session split
-    # Example: {"2025_09_08", "2025_09_09"}
-    val_groups: Set[str] = field(default_factory=lambda: {"2025_09_08", "2025_09_09"})
+    # Validation split by folder name:
+    # - if empty, auto-pick 1 group deterministically from available groups
+    # val_groups: Set[str] = field(default_factory=set)
+    val_groups: Set[str] = field(default_factory=lambda: {"rect_rod_t0.3"})
 
     # Output
     ckpt_dir: str = "checkpoints"
     ckpt_name: str = field(default_factory=_default_ckpt_name)
+
 
 def main():
     cfg = TrainCfg()
@@ -310,15 +348,28 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device:", device)
 
-    ds = ForceCSVFolderDataset(cfg.data_root, seq_len=cfg.seq_len, normalize=True)
+    ds = ForceCSVFolderDataset(
+        cfg.data_root,
+        seq_len=cfg.seq_len,
+        clip_policy=cfg.clip_policy,
+        normalize=True,
+        feature_cols=cfg.feature_cols,
+    )
     print(f"Found {len(ds)} samples under {cfg.data_root}")
+    print("Using feature columns:", ds.feature_cols)
 
-    # Group by session folder
-    groups = [p.parent.name for p in ds.files]
-    print("unique groups:", len(set(groups)))
+    groups = [s["group"] for s in ds.samples]
+    uniq_groups = sorted(set(groups))
+    print("unique groups:", len(uniq_groups))
     print("top groups:", Counter(groups).most_common(10))
 
-    # Build session-based split
+    # Auto-pick one val group if none specified
+    if len(cfg.val_groups) == 0:
+        rng = np.random.default_rng(cfg.seed)
+        chosen = rng.choice(uniq_groups, size=1, replace=False).tolist()
+        cfg.val_groups = set(chosen)
+        print("Auto-selected val_groups:", sorted(cfg.val_groups))
+
     train_idx = [i for i, g in enumerate(groups) if g not in cfg.val_groups]
     val_idx = [i for i, g in enumerate(groups) if g in cfg.val_groups]
 
@@ -328,14 +379,13 @@ def main():
     print("train size:", len(train_ds), "val size:", len(val_ds))
     print("val groups:", sorted(cfg.val_groups))
 
-    # Print class balance overall + per split
-    all_labels = [ForceCSVFolderDataset.label_from_name(p.name) for p in ds.files]
-    train_labels = [ForceCSVFolderDataset.label_from_name(ds.files[i].name) for i in train_idx]
-    val_labels = [ForceCSVFolderDataset.label_from_name(ds.files[i].name) for i in val_idx]
-
-    print("overall pos:", sum(all_labels), "neg:", len(all_labels) - sum(all_labels))
-    print("train   pos:", sum(train_labels), "neg:", len(train_labels) - sum(train_labels))
-    print("val     pos:", sum(val_labels), "neg:", len(val_labels) - sum(val_labels))
+    # Class balance
+    all_labels = [float(s["y"]) for s in ds.samples]
+    train_labels = [float(ds.samples[i]["y"]) for i in train_idx]
+    val_labels = [float(ds.samples[i]["y"]) for i in val_idx]
+    print("overall pos:", int(sum(all_labels)), "neg:", int(len(all_labels) - sum(all_labels)))
+    print("train   pos:", int(sum(train_labels)), "neg:", int(len(train_labels) - sum(train_labels)))
+    print("val     pos:", int(sum(val_labels)), "neg:", int(len(val_labels) - sum(val_labels)))
 
     train_loader = DataLoader(
         train_ds,
@@ -352,36 +402,33 @@ def main():
         pin_memory=True,
     )
 
-    # Model
     model_cfg = get_model_config(cfg.model_preset, num_classes=1)
-
     print("MODEL CFG:", model_cfg)
 
     model = PatchTSTClassifier(model_cfg).to(device)
-
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
 
-    best_val_acc = -1.0
     os.makedirs(cfg.ckpt_dir, exist_ok=True)
-
-    train_start = time.time()
-    best_epoch_time_start = time.time()
 
     best_val_acc = -1.0
     best_epoch = None
     best_val_loss = None
     best_stats = None
     best_state_dict = None
+    best_time_to_best_s = None
+
+    train_start = time.time()
 
     for epoch in range(1, cfg.epochs + 1):
-        best_epoch_time_start = time.time()
+        t0 = time.time()
         print()
+
         tr_loss, tr_acc = train_one_epoch(
             model, train_loader, optimizer, device,
             amp=cfg.amp, grad_clip=cfg.grad_clip
         )
         va_loss, va_acc, va_best_stats = evaluate(model, val_loader, device)
-        epoch_time = time.time() - best_epoch_time_start
+        epoch_time = time.time() - t0
 
         print(
             f"Epoch {epoch:03d} | "
@@ -390,33 +437,38 @@ def main():
             f"time {epoch_time:.2f}s"
         )
 
+        # Save BEST (fixes bug from your previous version)
         if va_acc > best_val_acc:
             best_val_acc = float(va_acc)
             best_val_loss = float(va_loss)
             best_epoch = int(epoch)
-            best_stats = va_best_stats              # dict of python scalars
-            best_time_to_best_s = epoch_time
-
-        best_state_dict = copy.deepcopy(model.state_dict())
+            best_stats = va_best_stats
+            best_state_dict = copy.deepcopy(model.state_dict())
+            best_time_to_best_s = float(time.time() - train_start)
 
     total_train_time_s = float(time.time() - train_start)
+
     ckpt = {
         "model_state": best_state_dict,
-        "model_cfg": config_to_dict(model_cfg),  # recommended (avoids torch.load issues)
+        "model_cfg": config_to_dict(model_cfg),
         "best_epoch": best_epoch,
-        "best_val_acc": best_val_acc,            # name it according to your criterion
+        "best_val_acc": best_val_acc,
         "best_val_loss": best_val_loss,
         "best_stats": best_stats,
         "val_groups": sorted(cfg.val_groups),
 
-        # durations
+        "feature_cols": ds.feature_cols,
+        "seq_len": int(cfg.seq_len),
+        "clip_policy": cfg.clip_policy,
+
         "time_to_best_s": best_time_to_best_s,
         "total_train_time_s": total_train_time_s,
         "epochs_ran": int(cfg.epochs),
     }
+
     ckpt_path = Path(cfg.ckpt_dir) / cfg.ckpt_name
-    
     torch.save(ckpt, ckpt_path)
+
     print("Saved checkpoint:", ckpt_path)
     print("time_to_best_s:", best_time_to_best_s, "total_train_time_s:", total_train_time_s)
 

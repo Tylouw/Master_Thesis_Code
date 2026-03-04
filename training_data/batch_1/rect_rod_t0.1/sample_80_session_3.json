@@ -1,0 +1,54 @@
+{
+  "saved_at": "2026-03-02T15:03:30.580118",
+  "saved_in": "/home/jwobber/Documents/Master_Thesis_Code/training_data/batch_1/rect_rod_t0.1",
+  "corresponding_csv": "/home/jwobber/Documents/Master_Thesis_Code/training_data/batch_1/rect_rod_t0.1/sample_80_session_3.csv",
+  "sample_rate_Hz": 500.0,
+  "sample_deltatime_s": 0.002,
+  "num_samples": 2000,
+  "num_insertions": 21,
+  "sequence_length_s": 4.0,
+  "deviation": [
+    5.904070976619121e-05,
+    6.542076966151133e-05,
+    0.0,
+    0.03427828147132736,
+    0.008703329770861135,
+    0.0
+  ],
+  "angle_radius": [
+    0.8366146552419674,
+    8.812310998143533e-05
+  ],
+  "min_max_deviation_mm": 0.1,
+  "min_max_deviation_m": 0.0001,
+  "angular_error_deg": 5.0,
+  "angular_error_rad": 0.08726646259971647,
+  "successful_insertion": true,
+  "failure_reason": null,
+  "insertion_task": "rect_rod",
+  "tolerance": 0.1,
+  "holderPose_Up": [
+    -0.38931,
+    -0.3687,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "holderPose_Down": [
+    -0.38931,
+    -0.3687,
+    -0.024999994039535553,
+    3.079,
+    -0.625,
+    0.0
+  ],
+  "insertionPose": [
+    -0.59493,
+    -0.32949,
+    0.06000000596046445,
+    3.079,
+    -0.625,
+    0.0
+  ]
+}

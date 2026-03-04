@@ -64,24 +64,24 @@ smallRodInsertionPose_03 = np.concatenate([np.array([-0.48365, -0.32101, default
 rectRodHolderPose_Up = np.concatenate([np.array([-0.38931, -0.3687, default_height]), default_orientation])
 rectRodHolderPose_Down = np.concatenate([np.array([-0.38931, -0.3687, default_height - 0.085]), default_orientation])
 
-rectRodInsertionPose_01 = np.concatenate([np.array([-0.50254, -0.36721, default_height]), default_orientation]) # tight
-rectRodInsertionPose_02 = np.concatenate([np.array([-0.49305, -0.34405, default_height]), default_orientation]) # medium
+rectRodInsertionPose_01 = np.concatenate([np.array([-0.59493, -0.32949, default_height]), default_orientation]) # tight
+rectRodInsertionPose_02 = np.concatenate([np.array([-0.58525, -0.30643, default_height]), default_orientation]) # medium
 rectRodInsertionPose_03 = np.concatenate([np.array([-0.57579, -0.28315, default_height]), default_orientation]) # loose
 
 config = RecordConfig(
     sequence_length=4.0, #seconds
-    num_insertions=25,
+    num_insertions=35,
     insertionTask=InsertionTask.rect_rod,
-    tolerance=ToleranceLevel.loose,
+    tolerance=ToleranceLevel.medium,
     holderPose_Up=rectRodHolderPose_Up,
     holderPose_Down=rectRodHolderPose_Down,
-    insertionPose=rectRodInsertionPose_03,
+    insertionPose=rectRodInsertionPose_02,
 )
 config.setSampleRateHz(500.0)
 # config.setSavePath("test_recorded_data/real_test11/")
-config.setSavePath("training_data/batch_1/rect_rod_t0.3/")
-config.setDeviationMM(0.07)
-config.setAngularErrorDeg(2.0)
+config.setSavePath("training_data/batch_1/rect_rod_t0.2/")
+config.setDeviationMM(0.15)
+config.setAngularErrorDeg(5.0)
 
 config.print_config()
 sample_start_idx, session_start_idx = config.getSampleSessionStart()
@@ -341,165 +341,186 @@ def save_data_to_csv(f_data, idx: int, session: int, deviation, angle_radius, su
         json.dump(metadata, jf, indent=2)
     print("saved csv and metadata json")
 
+def create_plan():
+    pass
 
 
-thread1 = threading.Thread(target=listen_robot_data)
-if use_load_cell_feedback:
-    thread2 = threading.Thread(target=receive_loadcell_arduino)
+def main():
+    thread1 = threading.Thread(target=listen_robot_data)
+    if use_load_cell_feedback:
+        thread2 = threading.Thread(target=receive_loadcell_arduino)
 
-rtde_c.moveL(config.holderPose_Up)
-init_gripper(gripper, ur_ip)
-thread1.start()
-if use_load_cell_feedback:
-    thread2.start()
+    rtde_c.moveL(config.holderPose_Up)
+    init_gripper(gripper, ur_ip)
+    thread1.start()
+    if use_load_cell_feedback:
+        thread2.start()
 
-num_successful = 0
-num_failed = 0
+    num_successful = 0
+    num_failed = 0
 
-for i in range(config.num_insertions):
-    print(f"\n=== Starting insertion {i+1}/{config.num_insertions} ===")
-    rtde_c.zeroFtSensor()
-    rtde_c.moveL(config.holderPose_Down, 0.1, 0.5)
-    close_until_force_limit(gripper, target_force_n=50.0, speed=128)
-    rtde_c.moveL(config.holderPose_Up, 0.1, 0.5)
+    for i in range(config.num_insertions):
+        print(f"\n=== Starting insertion {i+1}/{config.num_insertions} ===")
+        rtde_c.zeroFtSensor()
+        rtde_c.moveL(config.holderPose_Down, 0.1, 0.5)
+        close_until_force_limit(gripper, target_force_n=50.0, speed=128)
+        rtde_c.moveL(config.holderPose_Up, 0.1, 0.5)
 
-    # exit()
-    
-    angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
-    radius = np.random.uniform(0, config.min_max_deviation)  # Random radius
-    # angle = 0.0
-    # radius = min_max_deviation
-    
-    # Convert polar to Cartesian coordinates
-    deviation_x = radius * np.cos(angle)
-    deviation_y = radius * np.sin(angle)
-    deviation_position = [deviation_x, deviation_y, 0.0]
-    deviation_orientation = [np.random.uniform(-config.angular_error, config.angular_error), np.random.uniform(-config.angular_error, config.angular_error), 0.0]
-    devi = np.concatenate((deviation_position, deviation_orientation))
+        # exit()
+        
+        angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
+        radius = np.random.uniform(0, config.min_max_deviation)  # Random radius
+        # angle = 0.0
+        # radius = min_max_deviation
+        
+        # Convert polar to Cartesian coordinates
+        deviation_x = radius * np.cos(angle)
+        deviation_y = radius * np.sin(angle)
+        deviation_position = [deviation_x, deviation_y, 0.0]
+        deviation_orientation = [np.random.uniform(-config.angular_error, config.angular_error), np.random.uniform(-config.angular_error, config.angular_error), 0.0]
+        # deviation_orientation = np.array([-0.5, 0.1, -0.1])
+        devi = np.concatenate((deviation_position, deviation_orientation))
 
-    # break
-    # insertion
-    #concat this shit
-    insertionPoseUP = config.insertionPose + devi
-    insertionPoseDown = insertionPoseUP + np.array([0, 0, -0.049, 0, 0, 0])
+        # break
+        # insertion
+        #concat this shit
+        insertionPoseUP = config.insertionPose + devi
+        insertionPoseDown = insertionPoseUP + np.array([0, 0, -0.049, 0, 0, 0])
 
-    sequence_start_time = time.perf_counter()
+        sequence_start_time = time.perf_counter()
 
-    recording = True
-    rtde_c.moveL(insertionPoseUP, 0.4, 0.5)
+        recording = True
+        rtde_c.moveL(insertionPoseUP, 0.4, 0.5)
 
-    # Good practice: avoid entering force mode right after motion without a tiny pause
-    time.sleep(0.02)  # UR recommends >=0.02s before force mode in many cases :contentReference[oaicite:6]{index=6}
+        # Good practice: avoid entering force mode right after motion without a tiny pause
+        time.sleep(0.02)  # UR recommends >=0.02s before force mode in many cases :contentReference[oaicite:6]{index=6}
 
-    rtde_c.zeroFtSensor()  # reduce bias (especially important with gripper/payload) :contentReference[oaicite:7]{index=7}
-    rtde_c.forceModeSetDamping(0.1)
-    rtde_c.forceModeSetGainScaling(1.2)
+        rtde_c.zeroFtSensor()  # reduce bias (especially important with gripper/payload) :contentReference[oaicite:7]{index=7}
+        rtde_c.forceModeSetDamping(0.1)
+        rtde_c.forceModeSetGainScaling(1.2)
 
-    task_frame = insertionPoseUP
-    selection_vector = [1, 1, 0, 1, 1, 0]
-    wrench = [0, 0, 0, 0, 0, 0]
-    limits = [0.05, 0.05, 0.02, 0.5, 0.5, 0.2]
+        # task_frame = insertionPoseUP
+        # selection_vector = [1, 1, 0, 1, 1, 0]
+        # wrench = [0, 0, 0, 0, 0, 0]
+        # limits = [0.05, 0.05, 0.02, 0.5, 0.5, 0.2]
 
-    rtde_c.forceMode(task_frame, selection_vector, wrench, 2, limits)
+        task_frame = insertionPoseUP.copy()
+        task_frame[3:] = config.insertionPose[3:]  # remove random tilt from the force-frame
 
-    rtde_c.moveL(insertionPoseDown, 0.03, 0.3, asynchronous=True)
+        # Non-compliant: x, y, rz  -> position/orientation is respected
+        # Compliant:     z, rx, ry -> force push + angular compliance
+        selection_vector = [0, 0, 1, 0, 0, 0]
 
-    t0 = time.time()
-    stall_t0 = None
-    TIMEOUT = 2.3
-    successful_insertion = False
-    failure_reason = None
+        # Downward insertion force (tune to your setup)
+        wrench = [0, 0, 25.0, 0, 0, 0]
 
-    while True:
-        pose  = rtde_r.getActualTCPPose()
-        speed = rtde_r.getActualTCPSpeed()
-        force = rtde_r.getActualTCPForce()
+        # Limits meaning depends on compliance:
+        #  - compliant axes (1): max TCP speed [m/s] or [rad/s]
+        #  - non-compliant axes (0): max deviation [m] or [rad]
+        limits = [0.001, 0.001, 0.08, 0.8, 0.8, 0.20]
 
-        if time.time() - t0 > TIMEOUT:
-            print("Timeout -> Fail")
-            failure_reason = "Timeout"
-            successful_insertion = False
-            num_failed += 1
-            rtde_c.stopL(1.0)
-            break
+        rtde_c.forceMode(task_frame, selection_vector, wrench, 2, limits)
 
-        # jam heuristics: not moving in z + pushing hard
-        vz = abs(speed[2])
-        fz = abs(force[2])
+        rtde_c.moveL(insertionPoseDown, 0.03, 0.3, asynchronous=True)
 
-        if vz < 0.002 and fz > 15:         # tune thresholds to your setup
-            if stall_t0 is None:
-                stall_t0 = time.time()
-            elif time.time() - stall_t0 > 0.25:
-                print("Stall/jam -> Fail")
-                failure_reason = "Stall/jam"
+        t0 = time.time()
+        stall_t0 = None
+        TIMEOUT = 2.3
+        successful_insertion = False
+        failure_reason = None
+
+        while True:
+            pose  = rtde_r.getActualTCPPose()
+            speed = rtde_r.getActualTCPSpeed()
+            force = rtde_r.getActualTCPForce()
+
+            if time.time() - t0 > TIMEOUT:
+                print("Timeout -> Fail")
+                failure_reason = "Timeout"
                 successful_insertion = False
                 num_failed += 1
                 rtde_c.stopL(1.0)
                 break
-        else:
-            stall_t0 = None
 
-        # hard force safety threshold (optional)
-        if fz > 40:
-            print("Force limit -> Fail")
-            failure_reason = "Force limit"
-            successful_insertion = False
-            num_failed += 1
-            rtde_c.stopL(1.0)
-            break
+            # jam heuristics: not moving in z + pushing hard
+            vz = abs(speed[2])
+            fz = abs(force[2])
 
-        if use_load_cell_feedback:
-            if load_cell_value > 4000:  # tune threshold to your setup
-                print(f"Successful insertion")
-                successful_insertion = True
-                num_successful += 1
+            if vz < 0.002 and fz > 15:         # tune thresholds to your setup
+                if stall_t0 is None:
+                    stall_t0 = time.time()
+                elif time.time() - stall_t0 > 0.25:
+                    print("Stall/jam -> Fail")
+                    failure_reason = "Stall/jam"
+                    successful_insertion = False
+                    num_failed += 1
+                    rtde_c.stopL(1.0)
+                    break
+            else:
+                stall_t0 = None
+
+            # hard force safety threshold (optional)
+            if fz > 40:
+                print("Force limit -> Fail")
+                failure_reason = "Force limit"
+                successful_insertion = False
+                num_failed += 1
                 rtde_c.stopL(1.0)
                 break
 
-        time.sleep(0.01)
+            if use_load_cell_feedback:
+                if load_cell_value > 4000:  # tune threshold to your setup
+                    print(f"Successful insertion")
+                    successful_insertion = True
+                    num_successful += 1
+                    rtde_c.stopL(1.0)
+                    break
 
-    rtde_c.forceModeStop()
+            time.sleep(0.01)
 
-    remaining = config.sequence_length - (time.perf_counter() - sequence_start_time)
-    print(f"gotta wait {remaining:.2f} s")
-    if remaining > 0:
-        time.sleep(remaining)
+        rtde_c.forceModeStop()
 
-    recording = False
+        remaining = config.sequence_length - (time.perf_counter() - sequence_start_time)
+        print(f"gotta wait {remaining:.2f} s")
+        if remaining > 0:
+            time.sleep(remaining)
 
-    if not use_load_cell_feedback:
-        successful_insertion = False
-    
-    # input("Continue?")
-    data_np = np.asarray(data)  # if you currently have a list of rows
-    data_np = transform_forces_after_recording(data_np)
-    save_data_to_csv(data_np, i+1 + sample_start_idx, session_start_idx+1, devi.tolist(), [angle, radius], successful_insertion, failure_reason)
-    data = []
-    if not successful_insertion:
+        recording = False
+
+        if not use_load_cell_feedback:
+            successful_insertion = False
+        
+        # input("Continue?")
+        data_np = np.asarray(data)  # if you currently have a list of rows
+        data_np = transform_forces_after_recording(data_np)
+        save_data_to_csv(data_np, i+1 + sample_start_idx, session_start_idx+1, devi.tolist(), [angle, radius], successful_insertion, failure_reason)
+        data = []
+        if not successful_insertion:
+            gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
+
+        rtde_c.moveL(insertionPoseUP, 0.05, 0.2)
+
+        rtde_c.moveL(config.holderPose_Up, 0.4, 0.5)
+
+        print(f"S: {num_successful}, F: {num_failed}")
+        S_total, F_total = config.getSFCount()
+        print(f"Total S: {S_total}, F: {F_total}")
+
+        if not successful_insertion:
+            input("place the rod and continue")
+            continue
+        
+        rtde_c.moveL(config.holderPose_Down, 0.2, 0.5)
         gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
-
-    rtde_c.moveL(insertionPoseUP, 0.05, 0.2)
-
-    rtde_c.moveL(config.holderPose_Up, 0.4, 0.5)
-
-    print(f"S: {num_successful}, F: {num_failed}")
-    S_total, F_total = config.getSFCount()
-    print(f"Total S: {S_total}, F: {F_total}")
-
-    if not successful_insertion:
-        input("place the rod and continue")
-        continue
-    
-    rtde_c.moveL(config.holderPose_Down, 0.2, 0.5)
-    gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)
-    rtde_c.moveL(config.holderPose_Up, 0.2, 0.5)
+        rtde_c.moveL(config.holderPose_Up, 0.2, 0.5)
 
 
 
-program_running = False # this stops the infinite loops in the threads
+    program_running = False # this stops the infinite loops in the threads
 
-thread1.join()
-if use_load_cell_feedback:
-    thread2.join()
+    thread1.join()
+    if use_load_cell_feedback:
+        thread2.join()
 
+if __name__ == "__main__":
+    main()

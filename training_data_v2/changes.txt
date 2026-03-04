@@ -1,0 +1,27 @@
+instead of
+
+    task_frame = insertionPoseUP
+    selection_vector = [1, 1, 0, 1, 1, 0]
+    wrench = [0, 0, 0, 0, 0, 0]
+    limits = [0.05, 0.05, 0.02, 0.5, 0.5, 0.2]
+
+in the loop, i tried
+
+
+    task_frame = insertionPoseUP.copy()
+    task_frame[3:] = config.insertionPose[3:]  # remove random tilt from the force-frame
+
+    # Non-compliant: x, y, rz  -> position/orientation is respected
+    # Compliant:     z, rx, ry -> force push + angular compliance
+    selection_vector = [0, 0, 1, 0, 0, 0]
+
+    # Downward insertion force (tune to your setup)
+    wrench = [0, 0, 25.0, 0, 0, 0]
+
+    # Limits meaning depends on compliance:
+    #  - compliant axes (1): max TCP speed [m/s] or [rad/s]
+    #  - non-compliant axes (0): max deviation [m] or [rad]
+    limits = [0.001, 0.001, 0.08, 0.8, 0.8, 0.20]
+
+
+which was good but made completely different characteristics

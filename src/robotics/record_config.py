@@ -20,6 +20,34 @@ class ToleranceLevel(Enum):
     medium = 0.2
     loose = 0.3
 
+# 3*8*3*3*3 *5 = 3240 total configs
+# 3240*8s =
+
+class Deviation(Enum):
+    pos_min: float = 0.0
+    pos_max: float = 0.2
+    pos_steps: int = 3
+    ang_min: float = 0.0
+    ang_max: float = 0.0
+    ang_steps: int = 4
+    ang_phase_offset: float = 0.0
+    orient_min: float = -3.0
+    orient_middle: float = 0.0
+    orient_max: float = 3.0
+
+class GraspHeight(Enum):
+    low: float = 0.05
+    high: float = 0.15
+
+class ApproachHeight(Enum):
+    low: float = 0.05
+    high: float = 0.15
+
+class ForceLevel(Enum):
+    light:float = 20.0
+    medium:float = 30.0
+    heavy:float = 40.0
+
 @dataclass(slots=True)
 class RecordConfig:
     script_dir = Path(__file__).parent  # /src/robotics
@@ -30,10 +58,16 @@ class RecordConfig:
     num_insertions: int = None
     sample_rate: float = None #Hz
     deltatime: float = None #seconds
-    min_max_deviation_mm: float = None #millimeters
-    angular_error_deg: float = None #degrees
-    min_max_deviation: float = None #meters
-    angular_error: float = None #radians
+
+    deviation: Deviation = None
+    grasp_height: GraspHeight = None
+    approach_height: ApproachHeight = None
+    force_level: ForceLevel = None
+
+    # min_max_deviation_mm: float = None #millimeters
+    # angular_error_deg: float = None #degrees
+    # min_max_deviation: float = None #meters
+    # angular_error: float = None #radians
 
     insertionTask: InsertionTask = None
     tolerance: ToleranceLevel = None

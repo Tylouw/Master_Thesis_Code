@@ -1,0 +1,221 @@
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/ai/train_patchtst.py
+device: cuda
+Found 900 samples under training_data/batch_1
+Using feature columns: ['tcp_force_x[N]', 'tcp_force_y[N]', 'tcp_force_z[N]', 'tcp_force_rx[Nm?]', 'tcp_force_ry[Nm?]', 'tcp_force_rz[Nm?]']
+unique groups: 9
+top groups: [('big_rod_t0.1', 100), ('big_rod_t0.2', 100), ('big_rod_t0.3', 100), ('rect_rod_t0.1', 100), ('rect_rod_t0.2', 100), ('rect_rod_t0.3', 100), ('small_rod_t0.1', 100), ('small_rod_t0.2', 100), ('small_rod_t0.3', 100)]
+train size: 800 val size: 100
+val groups: ['rect_rod_t0.3']
+overall pos: 484 neg: 416
+train   pos: 430 neg: 370
+val     pos: 54 neg: 46
+MODEL CFG: PatchTSTConfig(seq_len=None, n_channels=None, num_classes=1, patch_len=128, stride=64, pad_end=True, d_model=256, n_heads=16, n_layers=2, d_ff=128, dropout=0.1, activation='gelu', channel_independent=True, pooling='mean', fuse='mean')
+/home/jwobber/Documents/Master_Thesis_Code/src/ai/patchtst.py:127: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+
+Best threshold by balanced acc: 0.40
+Confusion matrix (thr=0.40): TP=54 FP=2 TN=44 FN=0
+Val metrics: Acc=0.980 BalAcc=0.978 Precision=0.964 Recall=1.000 F1=0.982 Specificity=0.957
+Epoch 001 | train loss 0.6045 acc 0.661 | val loss 0.1924 acc 0.980 | time 1.95s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=49 FP=0 TN=46 FN=5
+Val metrics: Acc=0.950 BalAcc=0.954 Precision=1.000 Recall=0.907 F1=0.951 Specificity=1.000
+Epoch 002 | train loss 0.2559 acc 0.911 | val loss 0.4929 acc 0.950 | time 1.62s
+
+Best threshold by balanced acc: 0.95
+Confusion matrix (thr=0.95): TP=52 FP=0 TN=46 FN=2
+Val metrics: Acc=0.980 BalAcc=0.981 Precision=1.000 Recall=0.963 F1=0.981 Specificity=1.000
+Epoch 003 | train loss 0.1390 acc 0.955 | val loss 0.1116 acc 0.980 | time 1.85s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=52 FP=0 TN=46 FN=2
+Val metrics: Acc=0.980 BalAcc=0.981 Precision=1.000 Recall=0.963 F1=0.981 Specificity=1.000
+Epoch 004 | train loss 0.1297 acc 0.955 | val loss 0.1814 acc 0.980 | time 1.74s
+
+Best threshold by balanced acc: 0.70
+Confusion matrix (thr=0.70): TP=52 FP=0 TN=46 FN=2
+Val metrics: Acc=0.980 BalAcc=0.981 Precision=1.000 Recall=0.963 F1=0.981 Specificity=1.000
+Epoch 005 | train loss 0.0904 acc 0.969 | val loss 0.0578 acc 0.980 | time 1.73s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 006 | train loss 0.0373 acc 0.989 | val loss 0.0161 acc 1.000 | time 1.68s
+
+Best threshold by balanced acc: 0.10
+Confusion matrix (thr=0.10): TP=54 FP=1 TN=45 FN=0
+Val metrics: Acc=0.990 BalAcc=0.989 Precision=0.982 Recall=1.000 F1=0.991 Specificity=0.978
+Epoch 007 | train loss 0.0182 acc 0.995 | val loss 0.0436 acc 0.990 | time 1.70s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=53 FP=0 TN=46 FN=1
+Val metrics: Acc=0.990 BalAcc=0.991 Precision=1.000 Recall=0.981 F1=0.991 Specificity=1.000
+Epoch 008 | train loss 0.0255 acc 0.994 | val loss 0.0733 acc 0.990 | time 1.72s
+
+Best threshold by balanced acc: 0.55
+Confusion matrix (thr=0.55): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 009 | train loss 0.0228 acc 0.990 | val loss 0.0151 acc 1.000 | time 1.55s
+
+Best threshold by balanced acc: 0.95
+Confusion matrix (thr=0.95): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 010 | train loss 0.0680 acc 0.975 | val loss 0.0386 acc 1.000 | time 1.74s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 011 | train loss 0.0072 acc 0.998 | val loss 0.0010 acc 1.000 | time 1.73s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 012 | train loss 0.0044 acc 0.998 | val loss 0.0003 acc 1.000 | time 1.73s
+
+Best threshold by balanced acc: 0.60
+Confusion matrix (thr=0.60): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 013 | train loss 0.0282 acc 0.993 | val loss 0.0270 acc 1.000 | time 1.72s
+
+Best threshold by balanced acc: 0.85
+Confusion matrix (thr=0.85): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 014 | train loss 0.0198 acc 0.994 | val loss 0.0365 acc 1.000 | time 1.73s
+
+Best threshold by balanced acc: 0.10
+Confusion matrix (thr=0.10): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 015 | train loss 0.0219 acc 0.991 | val loss 0.0027 acc 1.000 | time 1.91s
+
+Best threshold by balanced acc: 0.75
+Confusion matrix (thr=0.75): TP=54 FP=2 TN=44 FN=0
+Val metrics: Acc=0.980 BalAcc=0.978 Precision=0.964 Recall=1.000 F1=0.982 Specificity=0.957
+Epoch 016 | train loss 0.0068 acc 0.996 | val loss 0.0928 acc 0.980 | time 1.57s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 017 | train loss 0.0073 acc 0.999 | val loss 0.0001 acc 1.000 | time 1.73s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=2 TN=44 FN=0
+Val metrics: Acc=0.980 BalAcc=0.978 Precision=0.964 Recall=1.000 F1=0.982 Specificity=0.957
+Epoch 018 | train loss 0.0041 acc 0.998 | val loss 0.1637 acc 0.980 | time 1.73s
+
+Best threshold by balanced acc: 0.80
+Confusion matrix (thr=0.80): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 019 | train loss 0.0024 acc 0.999 | val loss 0.0168 acc 1.000 | time 1.70s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 020 | train loss 0.0029 acc 0.999 | val loss 0.0000 acc 1.000 | time 1.74s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 021 | train loss 0.0097 acc 0.996 | val loss 0.0000 acc 1.000 | time 1.78s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 022 | train loss 0.0048 acc 0.998 | val loss 0.0004 acc 1.000 | time 1.56s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 023 | train loss 0.0058 acc 0.999 | val loss 0.0001 acc 1.000 | time 1.68s
+
+Best threshold by balanced acc: 0.95
+Confusion matrix (thr=0.95): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 024 | train loss 0.0142 acc 0.996 | val loss 0.0586 acc 1.000 | time 1.54s
+
+Best threshold by balanced acc: 0.05
+Confusion matrix (thr=0.05): TP=54 FP=0 TN=46 FN=0
+Val metrics: Acc=1.000 BalAcc=1.000 Precision=1.000 Recall=1.000 F1=1.000 Specificity=1.000
+Epoch 025 | train loss 0.0015 acc 0.999 | val loss 0.0001 acc 1.000 | time 1.53s
+Saved checkpoint: checkpoints/patchtst_force_best_2026-03-03_17-03-48.pt
+time_to_best_s: 10.571812152862549 total_train_time_s: 42.67504906654358
+(.venv) jwobber@i40-ws-2:~/Documents/Master_Thesis_Code$ python src/ai/inspect_checkpoint.py checkpoints/patchtst_force_best_2026-03-03_17-03-48.pt 
+
+================================================================================
+Checkpoint file
+================================================================================
+path: checkpoints/patchtst_force_best_2026-03-03_17-03-48.pt
+size: 7248864 bytes
+type: dict
+
+================================================================================
+Top-level keys
+================================================================================
+- best_epoch: (int) 6
+- best_stats: (dict, keys=12)
+- best_val_acc: (float) 1.0
+- best_val_loss: (float) 0.016058588176965715
+- clip_policy: (str) end
+- epochs_ran: (int) 25
+- feature_cols: (list, len=6) ['tcp_force_x[N]', 'tcp_force_y[N]', 'tcp_force_z[N]', 'tcp_force_rx[Nm?]', 'tcp_force_ry[Nm?]', 'tcp_force_rz[Nm?]']
+- model_cfg: (dict, keys=15)
+- model_state: (OrderedDict, keys=33)
+- seq_len: (int) 2000
+- time_to_best_s: (float) 10.571812152862549
+- total_train_time_s: (float) 42.67504906654358
+- val_groups: (list, len=1) ['rect_rod_t0.3']
+
+================================================================================
+Common metadata (if present)
+================================================================================
+best_val_acc: 1.0
+val_groups: ['rect_rod_t0.3']
+time_to_best_s: 10.57  (0:00:11)
+total_train_time_s: 42.68  (0:00:43)
+
+================================================================================
+Best stats (from evaluate)
+================================================================================
+selection_metric: balanced_accuracy
+best_threshold: 0.05000000074505806
+tp: 54
+fp: 0
+tn: 46
+fn: 0
+acc: 1.0
+bal_acc: 0.9999999999798712
+precision: 0.9999999999814816
+recall: 0.9999999999814816
+f1: 0.9999999994814817
+specificity: 0.999999999978261
+
+================================================================================
+Model config
+================================================================================
+activation: gelu
+channel_independent: True
+d_ff: 128
+d_model: 256
+dropout: 0.1
+fuse: mean
+n_channels: None
+n_heads: 16
+n_layers: 2
+num_classes: 1
+pad_end: True
+patch_len: 128
+pooling: mean
+seq_len: None
+stride: 64
+/home/jwobber/Documents/Master_Thesis_Code/src/ai/patchtst.py:127: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+
+================================================================================
+Model reconstruction
+================================================================================
+Model class: PatchTSTClassifier
+Total params: 1808385
+Trainable params: 1808385
+Loaded model_state with strict=False
+Missing keys: 0
+Unexpected keys: 0

@@ -161,9 +161,25 @@ def patchtst_small(num_classes: int = 1) -> PatchTSTConfig:
         fuse="mean",
     )
 
+def patchtst_big(num_classes: int = 1) -> PatchTSTConfig:
+    return PatchTSTConfig(
+        num_classes=num_classes,
+        patch_len=128,
+        stride=64,
+        d_model=256,
+        n_heads=16,
+        n_layers=2,
+        d_ff=128,
+        dropout=0.1,
+        channel_independent=True,
+        pooling="mean",
+        fuse="mean",
+    )
+
 MODEL_PRESETS = {
     "base": patchtst_base,
     "small": patchtst_small,
+    "big": patchtst_big,
 }
 
 def get_model_config(preset: str, num_classes: int = 1) -> PatchTSTConfig:
