@@ -33,9 +33,13 @@ load_cell_value: int = 0
 insertion = 1
 
 ur_ip = "192.168.1.11"
-rtde_c = rtde_control.RTDEControlInterface(ur_ip)
-rtde_r = rtde_receive.RTDEReceiveInterface(ur_ip)
-gripper = RobotiqGripper()
+try:
+    rtde_c = rtde_control.RTDEControlInterface(ur_ip)
+    rtde_r = rtde_receive.RTDEReceiveInterface(ur_ip)
+    gripper = RobotiqGripper()
+except Exception as e:
+    print(f"Error connecting to robot or gripper: {e}")
+    # exit(1)
 
 
 
@@ -287,7 +291,7 @@ def transform_forces_after_recording(data: np.ndarray,
 
     return data
 
-def save_data_to_csv(f_data, idx: int, session: int, deviation, angle_radius, successful_insertion, failure_reason: str):
+def save_data_to_csv(f_data, idx: int, session: int, plan_item, successful_insertion, failure_reason: str):
     column_names = (
         c_def.numInsertion +
         c_def.mapping_new[rob_att.force.name][0] +
@@ -323,12 +327,20 @@ def save_data_to_csv(f_data, idx: int, session: int, deviation, angle_radius, su
         "num_samples": len(f_data),
         "num_insertions": config.num_insertions,
         "sequence_length_s": config.sequence_length,
-        "deviation": deviation,
-        "angle_radius": angle_radius,
-        "min_max_deviation_mm": config.min_max_deviation_mm,
-        "min_max_deviation_m": config.min_max_deviation,
-        "angular_error_deg": config.angular_error_deg,
-        "angular_error_rad": config.angular_error,
+        "plan_item": {
+            "grasp_height": plan_item[0],
+            "approach_height": plan_item[1],
+            "force_level": plan_item[2],
+            "deviation": {
+                "x": plan_item[3][0],
+                "y": plan_item[3][1],
+                "z": 0.0,  # no z deviation in this example
+            },
+            "tilt": {
+                "x": plan_item[4][0],
+                "y": plan_item[4][1],
+            }
+        },
         "successful_insertion": successful_insertion,
         "failure_reason": failure_reason,
         "insertion_task": config.insertionTask.value,
@@ -342,10 +354,33 @@ def save_data_to_csv(f_data, idx: int, session: int, deviation, angle_radius, su
     print("saved csv and metadata json")
 
 def create_plan():
-    pass
+    plan = []
+    radius_steps = np.linspace(config.deviation.pos_min, config.deviation.pos_max, config.deviation.pos_steps)
+    angle_steps = np.linspace(0, 2*np.pi, config.deviation.ang_steps, endpoint=False)
+    tilt_combinations = [(tilt_x, tilt_y) for tilt_x in config.deviation.tilt_list for tilt_y in config.deviation.tilt_list]
+
+    for gh in config.grasp_height:
+        for ah in config.approach_height:
+            for fl in config.force_level:
+                n = 0
+                if config.tolerance == ToleranceLevel.tight:
+                    n = config.deviation.num_insertions_tight
+                else:
+                    n = config.deviation.num_insertions_not_tight
+                
+                for i in range(n):
+                    angle = angle_steps[i % len(angle_steps)]
+                    radius = radius_steps[i // len(angle_steps) % len(radius_steps)]
+                    devi = (radius * np.cos(angle), radius * np.sin(angle))  # no z deviation, only xy
+                    tilt = tilt_combinations[i % len(tilt_combinations)]
+                    plan.append((gh, ah, fl, devi, tilt))
+    
+    return plan
+
 
 
 def main():
+
     thread1 = threading.Thread(target=listen_robot_data)
     if use_load_cell_feedback:
         thread2 = threading.Thread(target=receive_loadcell_arduino)
@@ -359,32 +394,39 @@ def main():
     num_successful = 0
     num_failed = 0
 
-    for i in range(config.num_insertions):
-        print(f"\n=== Starting insertion {i+1}/{config.num_insertions} ===")
+    plan = create_plan()
+    print(plan)
+
+    for i in range(len(plan)):
+        print(f"\n=== Starting insertion {i+1}/{len(plan)} ===")
         rtde_c.zeroFtSensor()
-        rtde_c.moveL(config.holderPose_Down, 0.1, 0.5)
+        gh, ah, fl, devi, tilt = plan[i]
+        grasp_pose = config.holderPose_Down.copy()
+        grasp_pose[2] += gh / 1000.0
+        rtde_c.moveL(grasp_pose, 0.1, 0.5)
         close_until_force_limit(gripper, target_force_n=50.0, speed=128)
         rtde_c.moveL(config.holderPose_Up, 0.1, 0.5)
 
         # exit()
         
-        angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
-        radius = np.random.uniform(0, config.min_max_deviation)  # Random radius
-        # angle = 0.0
-        # radius = min_max_deviation
+        # angle = np.random.uniform(0, 2 * np.pi)  # Random angle in radians
+        # radius = np.random.uniform(0, config.min_max_deviation)  # Random radius
+        # # angle = 0.0
+        # # radius = min_max_deviation
         
-        # Convert polar to Cartesian coordinates
-        deviation_x = radius * np.cos(angle)
-        deviation_y = radius * np.sin(angle)
-        deviation_position = [deviation_x, deviation_y, 0.0]
-        deviation_orientation = [np.random.uniform(-config.angular_error, config.angular_error), np.random.uniform(-config.angular_error, config.angular_error), 0.0]
-        # deviation_orientation = np.array([-0.5, 0.1, -0.1])
-        devi = np.concatenate((deviation_position, deviation_orientation))
+        # # Convert polar to Cartesian coordinates
+        # deviation_x = radius * np.cos(angle)
+        # deviation_y = radius * np.sin(angle)
+        # deviation_position = [deviation_x, deviation_y, 0.0]
+        # deviation_orientation = [np.random.uniform(-config.angular_error, config.angular_error), np.random.uniform(-config.angular_error, config.angular_error), 0.0]
+        # # deviation_orientation = np.array([-0.5, 0.1, -0.1])
+        # devi = np.concatenate((deviation_position, deviation_orientation))
 
         # break
         # insertion
         #concat this shit
-        insertionPoseUP = config.insertionPose + devi
+        total_deviation = np.array([devi[0], devi[1], ah / 1000.0, tilt[0], tilt[1], 0.0])
+        insertionPoseUP = config.insertionPose + total_deviation
         insertionPoseDown = insertionPoseUP + np.array([0, 0, -0.049, 0, 0, 0])
 
         sequence_start_time = time.perf_counter()
@@ -412,7 +454,7 @@ def main():
         selection_vector = [0, 0, 1, 0, 0, 0]
 
         # Downward insertion force (tune to your setup)
-        wrench = [0, 0, 25.0, 0, 0, 0]
+        wrench = [0, 0, fl, 0, 0, 0]
 
         # Limits meaning depends on compliance:
         #  - compliant axes (1): max TCP speed [m/s] or [rad/s]
@@ -493,7 +535,7 @@ def main():
         # input("Continue?")
         data_np = np.asarray(data)  # if you currently have a list of rows
         data_np = transform_forces_after_recording(data_np)
-        save_data_to_csv(data_np, i+1 + sample_start_idx, session_start_idx+1, devi.tolist(), [angle, radius], successful_insertion, failure_reason)
+        save_data_to_csv(data_np, i+1 + sample_start_idx, session_start_idx+1, plan[i], successful_insertion, failure_reason)
         data = []
         if not successful_insertion:
             gripper.move_and_wait_for_pos(gripper.get_open_position(), speed=128, force=64)

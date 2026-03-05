@@ -24,24 +24,22 @@ class ToleranceLevel(Enum):
 # 3240*8s =
 
 class Deviation(Enum):
+    num_insertions_tight: int = 40
+    num_insertions_not_tight: int = 30
     pos_min: float = 0.0
-    pos_max: float = 0.2
+    pos_max: float = 0.2 #mm
     pos_steps: int = 3
-    ang_min: float = 0.0
-    ang_max: float = 0.0
     ang_steps: int = 4
     ang_phase_offset: float = 0.0
-    orient_min: float = -3.0
-    orient_middle: float = 0.0
-    orient_max: float = 3.0
+    tilt_list: list[float] = field(default_factory=lambda: [-3.0, 0.0, 3.0])
 
 class GraspHeight(Enum):
-    low: float = 0.05
-    high: float = 0.15
+    low: float = 0.0
+    high: float = 7.0 #mm
 
 class ApproachHeight(Enum):
-    low: float = 0.05
-    high: float = 0.15
+    low: float = -5.0 #mm
+    high: float = 2.0
 
 class ForceLevel(Enum):
     light:float = 20.0
